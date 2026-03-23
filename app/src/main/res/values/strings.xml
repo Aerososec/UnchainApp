@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Unchain</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="currency_icon">currency icon</string>
+    <string name="widget_select_addiction_title">Выберите зависимость для виджета</string>
+</resources>

@@ -15,6 +15,11 @@ import androidx.work.WorkerParameters
 import com.example.unchain.R
 import com.example.unchain.domain.provider.TimeProvider
 import com.example.unchain.domain.repositories.UserRepository
+import com.example.unchain.domain.usecases.GetAddictionIdByWidgetIdUseCase
+import com.example.unchain.domain.usecases.GetAddictionInfoForWidgetUseCase
+import com.example.unchain.domain.usecases.GetUserProgressUseCase
+import com.example.unchain.domain.usecases.MarkDayFailUseCase
+import com.example.unchain.domain.usecases.MarkDaySuccessUseCase
 import com.example.unchain.domain.usecases.SetReminderUseCase
 import com.example.unchain.domain.utils.isSameDay
 import kotlinx.coroutines.flow.firstOrNull
@@ -22,36 +27,42 @@ import java.sql.Time
 import javax.inject.Inject
 
 
-class TestWorker(private val context: Context, workerParameters: WorkerParameters, private val userRepository: UserRepository, private val timeProvider: TimeProvider) :
+class TestWorker(
+    private val context: Context,
+    workerParameters: WorkerParameters,
+    private val userRepository: UserRepository,
+    private val timeProvider: TimeProvider
+) :
     CoroutineWorker(context, workerParameters) {
 
     override suspend fun doWork(): Result {
-        val userProgress = userRepository.getUserProgress(getAddictionId()).firstOrNull() ?: return Result.success()
+        val userProgress = userRepository.getUserProgress(getAddictionId()).firstOrNull()
+            ?: return Result.success()
         val lastCheckDate = userProgress.lastCheckDate
-        if (!isSameDay(lastCheckDate, timeProvider.now())){
+        if (!isSameDay(lastCheckDate, timeProvider.now())) {
             showNotification()
             Log.d("WORKER_TAG", "Days not same")
-        }
-        else{
+        } else {
             Log.d("WORKER_TAG", "Days is same")
         }
         return Result.success()
     }
 
-    private fun getAddictionId() : Int{
+    private fun getAddictionId(): Int {
         return inputData.getInt(ADDICTION_ID_KEY, DEFAULT_INT_VALUE)
     }
 
-    private fun showNotification(){
+    private fun showNotification() {
         createChannel()
         val notification = createNotification()
-        val notificationManager = ContextCompat.getSystemService(context, NotificationManager::class.java)
+        val notificationManager =
+            ContextCompat.getSystemService(context, NotificationManager::class.java)
         val notificationId = getAddictionId()
         notificationManager?.notify(notificationId, notification)
         Log.d("WORKER_TAG", "Show success")
     }
 
-    private fun createNotification() : Notification{
+    private fun createNotification(): Notification {
         return NotificationCompat.Builder(context, CHANNEL_ID)
             .setContentTitle(CONTENT_TITLE)
             .setContentText(CONTENT_TEXT)
@@ -59,28 +70,31 @@ class TestWorker(private val context: Context, workerParameters: WorkerParameter
             .build()
     }
 
-    private fun createChannel(){
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+    private fun createChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(CHANNEL_ID, CHANNEL_NAME, CHANNEL_IMPORTANCE)
 
-            val notificationManager = ContextCompat.getSystemService(context, NotificationManager::class.java)
+            val notificationManager =
+                ContextCompat.getSystemService(context, NotificationManager::class.java)
             notificationManager?.createNotificationChannel(channel)
         }
     }
 
 
-    class Factory @Inject constructor() : ChildWorkerFactory{
+    class Factory @Inject constructor(
+        private val userRepository: UserRepository,
+        private val timeProvider: TimeProvider
+    ) : ChildWorkerFactory {
         override fun create(
             context: Context,
-            workerParameters: WorkerParameters,
-            userRepository: UserRepository,
-            timeProvider: TimeProvider
+            workerParameters: WorkerParameters
         ): ListenableWorker {
             return TestWorker(context, workerParameters, userRepository, timeProvider)
         }
+
     }
 
-    companion object{
+    companion object {
         private const val CHANNEL_ID = "CHANNEL_ID_101"
         private const val CHANNEL_NAME = "UNCHAIN_CHANNEL_NAME"
         private const val CHANNEL_IMPORTANCE = NotificationManager.IMPORTANCE_DEFAULT

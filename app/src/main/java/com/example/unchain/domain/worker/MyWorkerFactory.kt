@@ -6,6 +6,7 @@ import androidx.work.WorkerFactory
 import androidx.work.WorkerParameters
 import com.example.unchain.domain.provider.TimeProvider
 import com.example.unchain.domain.repositories.UserRepository
+import com.example.unchain.domain.widgetWorker.WidgetWorker
 import javax.inject.Inject
 import javax.inject.Provider
 
@@ -19,7 +20,11 @@ class MyWorkerFactory @Inject constructor(private val workers: @JvmSuppressWildc
         return when(workerClassName){
             TestWorker::class.qualifiedName -> {
                 val childWorkerFactory = workers[TestWorker::class.java]?.get()
-                childWorkerFactory?.create(appContext, workerParameters, userRepository, timeProvider)
+                childWorkerFactory?.create(appContext, workerParameters)
+            }
+            WidgetWorker::class.qualifiedName -> {
+                val childWorkerFactory = workers[WidgetWorker::class.java]?.get()
+                childWorkerFactory?.create(appContext, workerParameters)
             }
             else -> null
         }

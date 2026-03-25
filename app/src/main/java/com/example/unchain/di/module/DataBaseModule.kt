@@ -18,7 +18,7 @@ class DataBaseModule {
     @Provides
     fun provideDataBase(application: Application) : AppDataBase{
 
-        application.deleteDatabase(DB_NAME)
+        application.deleteDatabase(DB_NAME) // для тестов
 
         return Room.databaseBuilder(
             application,

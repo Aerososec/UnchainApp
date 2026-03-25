@@ -5,8 +5,12 @@ import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import android.widget.RemoteViews
 import android.widget.Toast
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
 import com.example.unchain.R
 import com.example.unchain.UnchainApp
 import com.example.unchain.domain.models.AddictionWithProgress
@@ -16,6 +20,9 @@ import com.example.unchain.domain.usecases.GetAddictionInfoForWidgetUseCase
 import com.example.unchain.domain.usecases.GetUserProgressUseCase
 import com.example.unchain.domain.usecases.MarkDayFailUseCase
 import com.example.unchain.domain.usecases.MarkDaySuccessUseCase
+import com.example.unchain.domain.widgetWorker.WidgetWorker
+import com.example.unchain.domain.widgetWorker.WidgetWorker.Companion.ACTION_KEY
+import com.example.unchain.domain.widgetWorker.WidgetWorker.Companion.WIDGET_ID_KEY
 import com.example.unchain.presentation.widget.WidgetConfigActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -26,21 +33,9 @@ import javax.inject.Inject
 
 class MyWidgetProvider : AppWidgetProvider() {
 
-    @Inject
-    lateinit var getAddictionIdByWidgetId: GetAddictionIdByWidgetIdUseCase
-    @Inject
-    lateinit var getUserProgressUseCase: GetUserProgressUseCase
-    @Inject
-    lateinit var getAddictionInfoForWidgetUseCase: GetAddictionInfoForWidgetUseCase
-    @Inject
-    lateinit var markDaySuccessUseCase: MarkDaySuccessUseCase
-    @Inject
-    lateinit var markDayFailUseCase: MarkDayFailUseCase
-
-
     override fun onReceive(context: Context?, intent: Intent?) {
         super.onReceive(context, intent)
-        if (intent != null && context != null){
+        if (intent != null && context != null) {
 
             (context.applicationContext as UnchainApp).appComponent.inject(this)
 
@@ -49,33 +44,10 @@ class MyWidgetProvider : AppWidgetProvider() {
                 -1
             )
 
-            CoroutineScope(Dispatchers.IO).launch{
-                val addictionId = getAddictionId(widgetId)
+            val action = intent.action
 
-                addictionId?.let {
-
-
-                    val userProgress = getUserProgressUseCase.execute(addictionId).firstOrNull()
-                    userProgress?.let {
-
-                        when(intent.action){
-                            SUCCESS_DAY_ACTION -> {
-                                successDayAction(addictionId, userProgress)
-                            }
-                            FAIL_DAY_ACTION -> {
-                                failDayAction(addictionId, userProgress)
-                            }
-                        }
-
-                        updateWidget(context, widgetId)
-                    }
-
-                }
-
-            }
+            startWorker(context, widgetId, action)
         }
-
-
     }
 
     override fun onUpdate(
@@ -94,97 +66,23 @@ class MyWidgetProvider : AppWidgetProvider() {
     ) {
         CoroutineScope(Dispatchers.IO).launch {
             for (id in appWidgetIds) {
-
-                val views = RemoteViews(context.packageName, R.layout.widget_layout)
-                val addictionId = getAddictionId(widgetId = id)
-                addictionId?.let { addictionId ->
-                    val addictionInfo = getAddictionInfo(addictionId)
-                    setAddictionInfo(addictionInfo, views)
-                    Toast.makeText(context, "${addictionInfo.name} ${addictionInfo.currentStreak}",
-                        Toast.LENGTH_SHORT).show()
-                }
-
-                val successIntent = makeIntent(context, id, SUCCESS_DAY_ACTION)
-                val failIntent = makeIntent(context, id, FAIL_DAY_ACTION)
-
-                val successPendingIntent = makePendingIntent(context, id, successIntent, SUCCESS_ACTION_REQUEST_CODE)
-                val failPendingIntent = makePendingIntent(context, id, failIntent, FAIL_ACTION_REQUEST_CODE)
-
-                setPendingToButton(successPendingIntent, R.id.successfulDayButton, views)
-                setPendingToButton(failPendingIntent, R.id.unsuccessfulDayButton, views)
-
-                appWidgetManager.updateAppWidget(id, views)
+                startWorker(context, id, null)
             }
         }
     }
 
-    private suspend fun successDayAction(addictionId : Int, userProgress: UserProgress){
-        markDaySuccessUseCase.execute(userProgress, addictionId)
-    }
-
-    private suspend fun failDayAction(addictionId : Int, userProgress: UserProgress){
-        markDayFailUseCase.execute(userProgress, addictionId)
-    }
-
-    private suspend fun getAddictionInfo(addictionId : Int) : AddictionWithProgress{
-        getUserProgressUseCase.execute(addictionId).firstOrNull() // начинаем ведение зависимости, если она не начата
-        return getAddictionInfoForWidgetUseCase.execute(addictionId)
-    }
-
-    private suspend fun getAddictionId(widgetId : Int) : Int?{
-        return getAddictionIdByWidgetId.execute(widgetId)
-    }
-
-    private fun setAddictionInfo(addictionWithProgress: AddictionWithProgress, views : RemoteViews){
-        views.apply{
-            setTextViewText(R.id.addictionNameTextView, addictionWithProgress.name)
-            setTextViewText(R.id.currentCountTextView, addictionWithProgress.currentStreak.toString())
-
-        }
-    }
-
-    private fun makeIntent(context: Context, widgetId : Int, myAction : String) : Intent{
-        return Intent(context, MyWidgetProvider::class.java).apply {
-            action = myAction
-
-            putExtra(
-                AppWidgetManager.EXTRA_APPWIDGET_ID,
-                widgetId
-            )
-        }
-    }
-
-    private fun setPendingToButton(pendingIntent: PendingIntent, buttonId : Int, views : RemoteViews){
-        views.setOnClickPendingIntent(buttonId, pendingIntent)
-    }
-
-    private fun makePendingIntent(context: Context, widgetId : Int, intent: Intent, requestCode : Int) : PendingIntent{
-        return PendingIntent.getBroadcast(
-            context,
-            widgetId + requestCode,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    private fun startWorker(context: Context, widgetId: Int, action: String?) {
+        val inputData = workDataOf(
+            ACTION_KEY to action,
+            WIDGET_ID_KEY to widgetId
         )
-    }
 
-    private fun updateWidget(context: Context, id : Int){
-        val intent = Intent(context, MyWidgetProvider::class.java).apply {
-            action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+        val request = OneTimeWorkRequestBuilder<WidgetWorker>()
+            .setInputData(inputData)
+            .build()
 
-            putExtra(
-                AppWidgetManager.EXTRA_APPWIDGET_ID,
-                id
-            )
-        }
-        context.sendBroadcast(intent)
-    }
-
-    companion object{
-        private const val SUCCESS_DAY_ACTION = "com.example.unchain.SUCCESS_DAY"
-        private const val FAIL_DAY_ACTION = "com.example.unchain.FAIL_DAY"
-
-        private const val SUCCESS_ACTION_REQUEST_CODE = 1
-        private const val FAIL_ACTION_REQUEST_CODE = 2
+        WorkManager.getInstance(context)
+            .enqueue(request)
     }
 
 }

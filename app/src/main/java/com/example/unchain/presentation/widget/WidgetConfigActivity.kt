@@ -104,8 +104,8 @@ class WidgetConfigActivity : AppCompatActivity() {
             action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
 
             putExtra(
-                AppWidgetManager.EXTRA_APPWIDGET_ID,
-                appWidgetId
+                AppWidgetManager.EXTRA_APPWIDGET_IDS,
+                intArrayOf(appWidgetId)
             )
         }
         sendBroadcast(intent)

@@ -6,6 +6,7 @@ import com.example.unchain.UnchainApp
 import com.example.unchain.di.annotation.ApplicationSingleton
 import com.example.unchain.di.module.AddictionInWidgetModule
 import com.example.unchain.di.module.DataBaseModule
+import com.example.unchain.di.module.GeminiApiModule
 import com.example.unchain.di.module.TimeProviderModule
 import com.example.unchain.di.module.UserRepositoryModule
 import com.example.unchain.di.module.ViewModelModule
@@ -18,7 +19,17 @@ import dagger.BindsInstance
 import dagger.Component
 
 @ApplicationSingleton
-@Component(modules = [DataBaseModule::class, TimeProviderModule::class, UserRepositoryModule::class, ViewModelModule::class, WorkerModule::class, AddictionInWidgetModule::class])
+@Component(
+    modules = [
+        DataBaseModule::class,
+        TimeProviderModule::class,
+        UserRepositoryModule::class,
+        ViewModelModule::class,
+        WorkerModule::class,
+        AddictionInWidgetModule::class,
+        GeminiApiModule::class
+    ]
+)
 interface MainComponent {
 
     fun inject(userProgressFragment: UserProgressFragment)
@@ -26,7 +37,7 @@ interface MainComponent {
     fun inject(application: UnchainApp)
     fun inject(activity: MainActivity)
     fun inject(activity: WidgetConfigActivity)
-    fun inject(provider : MyWidgetProvider)
+    fun inject(provider: MyWidgetProvider)
 
     @Component.Factory
     interface MainComponentFactory {

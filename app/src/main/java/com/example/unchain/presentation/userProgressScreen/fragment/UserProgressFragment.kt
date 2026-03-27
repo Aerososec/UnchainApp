@@ -115,9 +115,7 @@ class UserProgressFragment : Fragment() {
                 )
             }
             context?.sendBroadcast(intent)
-            Toast.makeText(context, "ok", Toast.LENGTH_SHORT).show()
         }
-        Toast.makeText(context, "$addictionId", Toast.LENGTH_SHORT).show()
     }
 
     private fun parseArgs() {
@@ -164,7 +162,6 @@ class UserProgressFragment : Fragment() {
 
         val timeSetListener = TimePickerDialog.OnTimeSetListener{ _, hour, minute ->
             progressViewModel.setReminder(addictionId, hour, minute)
-            Log.d("TIME_PICKER", "Picked: $hour $minute")
         }
 
         val timePickerDialog = TimePickerDialog(

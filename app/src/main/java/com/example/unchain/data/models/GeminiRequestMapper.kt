@@ -1,0 +1,27 @@
+package com.example.unchain.data.models
+
+import com.example.unchain.data.remote.ContentRequestDto
+import com.example.unchain.data.remote.GeminiRequestDto
+import com.example.unchain.data.remote.PartRequestDto
+import com.example.unchain.domain.models.gemini.ContentRequest
+import com.example.unchain.domain.models.gemini.PartRequest
+import javax.inject.Inject
+
+class GeminiRequestMapper @Inject constructor() {
+    private fun dtoToEntityPart(partRequestDto: PartRequestDto) : PartRequest{
+        return PartRequest(partRequestDto.text)
+    }
+
+    private fun entityToDtoPart(partRequest: PartRequest) : PartRequestDto{
+        return PartRequestDto(partRequest.text)
+    }
+
+    private fun dtoToEntityContent(contentRequestDto: ContentRequestDto) : ContentRequest{
+        return ContentRequest(contentRequestDto.parts.map { dtoToEntityPart(it) })
+    }
+
+    private fun entityToDtoContent(contentRequest: ContentRequest) : ContentRequestDto{
+        return ContentRequestDto(contentRequest.parts.map { entityToDtoPart(it) })
+    }
+
+}

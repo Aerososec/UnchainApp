@@ -1,0 +1,2349 @@
+﻿package com.example.unchain
+
+import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.ext.junit.runners.AndroidJUnit4
+
+import org.junit.Test
+import org.junit.runner.RunWith
+
+import org.junit.Assert.*
+
+/**
+ * Instrumented test, which will execute on an Android device.
+ *
+ * See [testing documentation](http://d.android.com/tools/testing).
+ */
+@RunWith(AndroidJUnit4::class)
+class ExampleInstrumentedTest {
+    @Test
+    fun useAppContext() {
+        // Context of the app under test.
+        val appContext = InstrumentationRegistry.getInstrumentation().targetContext
+        assertEquals("com.example.unchain", appContext.packageName)
+    }
+}
+package com.example.unchain.data.db
+
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import com.example.unchain.data.models.AddictionDbModel
+import com.example.unchain.data.models.AddictionWithProgressDbModel
+import com.example.unchain.domain.models.Addiction
+import kotlinx.coroutines.flow.Flow
+
+
+@Dao
+interface AddictionDao {
+    @Query(
+        """
+SELECT 
+    a.id AS id,
+    a.name AS name,
+    a.isActive AS isActive,
+    p.currentStreak AS currentStreak
+FROM addiction a
+LEFT JOIN user_progress p
+ON a.id = p.addictionId
+"""
+    )
+    fun getAllAddictions(): Flow<List<AddictionWithProgressDbModel>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(list : List<AddictionDbModel>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertUserAddiction(addiction: AddictionDbModel)
+
+    @Query("SELECT COUNT(*) FROM addiction")
+    suspend fun getAllCount() : Int
+
+    @Query("SELECT * FROM addiction WHERE id =:addictionId LIMIT 1")
+    suspend fun getAddictionById(addictionId : Int) : AddictionDbModel
+
+}
+package com.example.unchain.data.db
+
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import com.example.unchain.data.models.AddictionInWidgetDbModel
+import com.example.unchain.data.models.AddictionWithProgressDbModel
+import com.example.unchain.domain.models.Addiction
+
+@Dao
+interface AddictionInWidgetDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun  insertAddictionInWidget(addictionInWidgetDbModel: AddictionInWidgetDbModel)
+
+    @Query("SELECT * FROM addiction")
+    suspend fun getAddictionsForWidgetConfig() : List<Addiction>
+
+    @Query("SELECT addictionId FROM addiction_in_widget WHERE widgetId =:widgetId LIMIT 1")
+    suspend fun getAddictionIdByWidgetId(widgetId : Int) : Int?
+
+    @Query("SELECT widgetId FROM addiction_in_widget WHERE addictionId =:addictionId")
+    suspend fun getWidgetIdByAddictionId(addictionId : Int) : Int?
+
+    @Query("SELECT a.id AS id,\n" +
+            "    a.name AS name,\n" +
+            "    a.isActive AS isActive,\n" +
+            "    p.currentStreak AS currentStreak\n" +
+            "FROM addiction a\n" +
+            "LEFT JOIN user_progress p\n" +
+            "ON a.id = p.addictionId " +
+            "WHERE a.id =:addictionId")
+    suspend fun getAddictionInfo(addictionId : Int) : AddictionWithProgressDbModel
+}
+package com.example.unchain.data.db
+
+import androidx.room.Database
+import androidx.room.RoomDatabase
+import com.example.unchain.data.models.AddictionDbModel
+import com.example.unchain.data.models.AddictionInWidgetDbModel
+import com.example.unchain.data.models.AddictionWithProgressDbModel
+import com.example.unchain.data.models.UserProgressDbModel
+
+@Database(entities = [AddictionDbModel::class, UserProgressDbModel::class, AddictionInWidgetDbModel::class], version = 1, exportSchema = false)
+abstract class AppDataBase : RoomDatabase(){
+
+    abstract fun addictionDao() : AddictionDao
+    abstract fun userProgressDao() : UserProgressDao
+    abstract fun addictionInWidgetDao() : AddictionInWidgetDao
+}
+package com.example.unchain.data.db
+
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import com.example.unchain.data.models.UserProgressDbModel
+import kotlinx.coroutines.flow.Flow
+
+@Dao
+interface UserProgressDao {
+
+    @Query("SELECT * FROM user_progress WHERE addictionId =:id LIMIT 1")
+    fun getUserProgress(id : Int) : Flow<UserProgressDbModel?>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertProgress(userProgress : UserProgressDbModel)
+
+}
+package com.example.unchain.data.defaultAddictions
+
+import com.example.unchain.domain.models.Addiction
+import com.example.unchain.domain.models.AddictionWithProgress
+
+object DefaultAddictions {
+    val list = listOf(
+        Addiction(id = 1, name = "РђР»РєРѕРіРѕР»СЊ"),
+        Addiction(id = 2, name = "РљСѓСЂРµРЅРёРµ"),
+        Addiction(id = 3, name = "РЎРѕС†РёР°Р»СЊРЅС‹Рµ СЃРµС‚Рё"),
+        Addiction(id = 4, name = "РЎР»Р°РґРєРѕРµ"),
+        Addiction(id = 5, name = "РђР·Р°СЂС‚РЅС‹Рµ РёРіСЂС‹")
+    )
+}
+package com.example.unchain.data.models
+
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+
+@Entity(tableName = "addiction")
+data class AddictionDbModel(
+    @PrimaryKey
+    val id: Int,
+    val name: String,
+    val isActive: Boolean,
+)
+package com.example.unchain.data.models
+
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+
+@Entity(tableName = "addiction_in_widget")
+data class AddictionInWidgetDbModel(
+    @PrimaryKey
+    val widgetId : Int,
+    val addictionId : Int
+)
+package com.example.unchain.data.models
+
+import androidx.room.Entity
+
+data class AddictionWithProgressDbModel(
+    val id: Int,
+    val name: String,
+    val isActive : Boolean,
+    val currentStreak : Int?
+)
+package com.example.unchain.data.models
+
+import com.example.unchain.domain.models.Addiction
+import com.example.unchain.domain.models.AddictionInWidget
+import com.example.unchain.domain.models.AddictionWithProgress
+import com.example.unchain.domain.models.UserProgress
+import javax.inject.Inject
+
+class Mapper @Inject constructor() {
+
+    fun entityToDbModelAddiction(addiction: Addiction) : AddictionDbModel{
+        return AddictionDbModel(
+            addiction.id,
+            addiction.name,
+            addiction.isActive
+        )
+    }
+
+    fun dbModelToEntityAddictionWithProgress(addictionDb: AddictionWithProgressDbModel) : AddictionWithProgress{
+        return AddictionWithProgress(
+            addictionDb.id,
+            addictionDb.name,
+            addictionDb.isActive,
+            addictionDb.currentStreak
+        )
+    }
+
+    fun dbModelToEntityAddiction(addiction: AddictionDbModel) : Addiction{
+        return Addiction(
+            addiction.id,
+            addiction.name,
+            addiction.isActive
+        )
+    }
+
+
+    fun entityToDbModelAddictionList(addictions: List<Addiction>) = addictions.map {
+        entityToDbModelAddiction(it)
+    }
+
+    fun dbModelToEntityAddictionList(addictions: List<AddictionWithProgressDbModel>) = addictions.map {
+        dbModelToEntityAddictionWithProgress(it)
+    }
+
+    fun entityToDbModelUserProgress(userProgress: UserProgress) : UserProgressDbModel{
+        return UserProgressDbModel(
+            userProgress.addictionId,
+            userProgress.startDate,
+            userProgress.currentStreak,
+            userProgress.bestStreak,
+            userProgress.currency,
+            userProgress.lastCheckDate,
+            userProgress.dayResult,
+            userProgress.hour,
+            userProgress.minute
+        )
+    }
+
+    fun dbModelToEntityUserProgress(userProgressDb: UserProgressDbModel) : UserProgress{
+        return UserProgress(
+            userProgressDb.addictionId,
+            userProgressDb.startDate,
+            userProgressDb.currentStreak,
+            userProgressDb.bestStreak,
+            userProgressDb.currency,
+            userProgressDb.lastCheckDate,
+            userProgressDb.dayResult,
+            userProgressDb.hour,
+            userProgressDb.minute
+        )
+    }
+
+    fun dbModelToEntityAddictionInWidget(addictionInWidgetDbModel: AddictionInWidgetDbModel) : AddictionInWidget{
+        return AddictionInWidget(
+            addictionInWidgetDbModel.widgetId,
+            addictionInWidgetDbModel.addictionId
+        )
+    }
+
+    fun entityToDbModelAddictionInWidget(addictionInWidget: AddictionInWidget) : AddictionInWidgetDbModel{
+        return AddictionInWidgetDbModel(
+            addictionInWidget.widgetId,
+            addictionInWidget.addictionId
+        )
+    }
+}
+package com.example.unchain.data.models
+
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+
+@Entity(tableName = "user_progress")
+data class UserProgressDbModel(
+    @PrimaryKey
+    val addictionId : Int,
+    val startDate : Long,
+    val currentStreak : Int,
+    val bestStreak : Int,
+    val currency : Int,
+    val lastCheckDate : Long,
+    val dayResult : Boolean,
+    val hour : Int? = null,
+    val minute : Int? = null
+)
+package com.example.unchain.data.remote
+
+import retrofit2.http.Body
+import retrofit2.http.Header
+import retrofit2.http.POST
+import retrofit2.http.Path
+
+interface GeminiApiService {
+    @POST("v1beta/models/{model}:generateContent")
+    suspend fun getGeminiResponse(
+        @Header("x-goog-api-key") apiKey : String,
+        @Body geminiRequest: GeminiRequest,
+        @Path("model") model : String
+    ) : GeminiResponse
+}
+package com.example.unchain.data.remote
+
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class GeminiRequest(val contents: List<ContentRequest>)
+
+@Serializable
+data class ContentRequest(val parts: List<PartRequest>)
+
+@Serializable
+data class PartRequest(val text: String)
+package com.example.unchain.data.remote
+
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class GeminiResponse(val candidates : List<Candidates>? = null)
+
+@Serializable
+data class Candidates(val content : ContentResponse)
+
+@Serializable
+data class ContentResponse(val parts : List<PartResponse>)
+
+@Serializable
+data class PartResponse(val text : String?)
+package com.example.unchain.data.repository
+
+import com.example.unchain.data.db.AddictionInWidgetDao
+import com.example.unchain.data.models.Mapper
+import com.example.unchain.domain.models.Addiction
+import com.example.unchain.domain.models.AddictionInWidget
+import com.example.unchain.domain.models.AddictionWithProgress
+import com.example.unchain.domain.repositories.AddictionInWidgetRepository
+import javax.inject.Inject
+
+class AddictionInWidgetRepositoryImpl @Inject constructor(
+    private val mapper: Mapper,
+    private val addictionInWidgetDao: AddictionInWidgetDao
+) : AddictionInWidgetRepository {
+    override suspend fun setAddictionInWidget(addiction: AddictionInWidget) {
+        addictionInWidgetDao.insertAddictionInWidget(mapper.entityToDbModelAddictionInWidget(addiction))
+    }
+
+    override suspend fun getAddictions(): List<Addiction> {
+       return addictionInWidgetDao.getAddictionsForWidgetConfig()
+    }
+
+    override suspend fun getAddictionIdByWidgetId(widgetId: Int): Int? {
+        return addictionInWidgetDao.getAddictionIdByWidgetId(widgetId)
+    }
+
+    override suspend fun getWidgetIdByAddictionId(addictionId: Int): Int? {
+        return addictionInWidgetDao.getWidgetIdByAddictionId(addictionId)
+    }
+
+    override suspend fun getAddictionInfo(addictionId: Int): AddictionWithProgress {
+        return mapper.dbModelToEntityAddictionWithProgress(addictionInWidgetDao.getAddictionInfo(addictionId))
+    }
+}
+package com.example.unchain.data.repository
+
+import android.appwidget.AppWidgetManager
+import android.content.Intent
+import com.example.unchain.data.db.AddictionDao
+import com.example.unchain.data.db.UserProgressDao
+import com.example.unchain.data.models.Mapper
+import com.example.unchain.domain.models.Addiction
+import com.example.unchain.domain.models.AddictionWithProgress
+import com.example.unchain.domain.models.UserProgress
+import com.example.unchain.domain.repositories.UserRepository
+import com.example.unchain.presentation.widget.MyWidgetProvider
+import com.example.unchain.presentation.widget.WidgetConfigActivity
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import javax.inject.Inject
+
+class UserRepositoryImpl @Inject constructor(
+    private val addictionDao: AddictionDao,
+    private val userProgressDao: UserProgressDao,
+    private val mapper: Mapper
+) : UserRepository {
+    override suspend fun startAddiction(userProgress : UserProgress) {
+        saveProgress(userProgress)
+    }
+
+    override suspend fun markDayFail(userProgress: UserProgress) {
+        saveProgress(userProgress)
+    }
+
+    override suspend fun markDaySuccess(userProgress: UserProgress) {
+        saveProgress(userProgress)
+    }
+
+    override fun getUserProgress(addictionId: Int): Flow<UserProgress?> {
+        return userProgressDao.getUserProgress(addictionId).map {
+            it?.let {
+                mapper.dbModelToEntityUserProgress(it)
+            }
+        }
+    }
+
+    override fun getAllAddictions(): Flow<List<AddictionWithProgress>> {
+        return addictionDao.getAllAddictions().map {
+            mapper.dbModelToEntityAddictionList(it)
+        }
+    }
+
+    override suspend fun insertAddiction(addiction: Addiction) {
+        addictionDao.insertUserAddiction(mapper.entityToDbModelAddiction(addiction))
+    }
+
+    override suspend fun getAddictionById(addictionId: Int): Addiction {
+        return mapper.dbModelToEntityAddiction(addictionDao.getAddictionById(addictionId))
+    }
+
+    override suspend fun saveUserProgress(userProgress: UserProgress) {
+        saveProgress(userProgress)
+    }
+
+
+    private suspend fun saveProgress(newProgress : UserProgress){
+        userProgressDao.upsertProgress(mapper.entityToDbModelUserProgress(newProgress))
+    }
+
+}
+package com.example.unchain.di.annotation
+
+import javax.inject.Scope
+
+@Scope
+@Retention(AnnotationRetention.RUNTIME)
+annotation class ApplicationSingleton()
+package com.example.unchain.di.annotation
+
+import android.view.View
+import androidx.lifecycle.ViewModel
+import dagger.MapKey
+import kotlin.reflect.KClass
+
+@MapKey
+@Target(AnnotationTarget.FUNCTION)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class ViewModelKey(val value : KClass<out ViewModel>)
+package com.example.unchain.di.annotation
+
+import androidx.work.ListenableWorker
+import dagger.MapKey
+import kotlin.reflect.KClass
+
+
+@MapKey
+@Target(AnnotationTarget.FUNCTION)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class WorkerKey(val value : KClass<out ListenableWorker>)
+package com.example.unchain.di.module
+
+import com.example.unchain.data.repository.AddictionInWidgetRepositoryImpl
+import com.example.unchain.domain.repositories.AddictionInWidgetRepository
+import dagger.Binds
+import dagger.Module
+
+@Module
+interface AddictionInWidgetModule {
+    @Binds
+    fun bindAddictionInWidgetRepository(impl : AddictionInWidgetRepositoryImpl) : AddictionInWidgetRepository
+}
+package com.example.unchain.di.module
+
+import android.app.Application
+import androidx.room.Room
+import androidx.room.RoomDatabase
+import com.example.unchain.data.db.AddictionDao
+import com.example.unchain.data.db.AddictionInWidgetDao
+import com.example.unchain.data.db.AppDataBase
+import com.example.unchain.data.db.UserProgressDao
+import com.example.unchain.di.annotation.ApplicationSingleton
+import dagger.Module
+import dagger.Provides
+
+@Module
+class DataBaseModule {
+
+    @ApplicationSingleton
+    @Provides
+    fun provideDataBase(application: Application) : AppDataBase{
+
+        application.deleteDatabase(DB_NAME) // РґР»СЏ С‚РµСЃС‚РѕРІ
+
+        return Room.databaseBuilder(
+            application,
+            AppDataBase::class.java,
+            DB_NAME
+        ).fallbackToDestructiveMigration().build()
+    }
+
+    @Provides
+    fun provideAddictionDao(db : AppDataBase) : AddictionDao{
+        return db.addictionDao()
+    }
+
+    @Provides
+    fun provideUserProgressDao(db: AppDataBase) : UserProgressDao{
+        return db.userProgressDao()
+    }
+
+    @Provides
+    fun provideAddictionInWidgetDao(db : AppDataBase) : AddictionInWidgetDao{
+        return db.addictionInWidgetDao()
+    }
+
+    companion object{
+        private const val DB_NAME = "addiction_app_db"
+    }
+}
+package com.example.unchain.di.module
+
+
+import com.example.unchain.data.remote.GeminiApiService
+import com.example.unchain.di.annotation.ApplicationSingleton
+import dagger.Module
+import dagger.Provides
+import kotlinx.serialization.json.Json
+import okhttp3.MediaType.Companion.toMediaType
+import retrofit2.Retrofit
+import retrofit2.converter.kotlinx.serialization.asConverterFactory
+
+@Module
+class GeminiApiModule {
+
+    @ApplicationSingleton
+    @Provides
+    fun provideGeminiApi() : GeminiApiService{
+        val baseUrl = "https://generativelanguage.googleapis.com/"
+        val converter = Json.asConverterFactory("application/json".toMediaType())
+
+        val retrofit = Retrofit.Builder()
+            .baseUrl(baseUrl)
+            .addConverterFactory(converter)
+            .build()
+
+        return retrofit.create<GeminiApiService>(GeminiApiService::class.java)
+    }
+}
+
+package com.example.unchain.di.module
+
+import com.example.unchain.domain.provider.SystemTimeProvider
+import com.example.unchain.domain.provider.TimeProvider
+import dagger.Binds
+import dagger.Module
+
+@Module
+interface TimeProviderModule {
+
+    @Binds
+    fun getTimeProvider(systemTimeProvider: SystemTimeProvider) : TimeProvider
+}
+package com.example.unchain.di.module
+
+import com.example.unchain.data.repository.UserRepositoryImpl
+import com.example.unchain.domain.repositories.UserRepository
+import dagger.Binds
+import dagger.Module
+
+@Module
+interface UserRepositoryModule {
+
+    @Binds
+    fun getUserRepository(userRepositoryImpl: UserRepositoryImpl) : UserRepository
+}
+package com.example.unchain.di.module
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import com.example.unchain.di.ViewModelFactory
+import com.example.unchain.di.annotation.ViewModelKey
+import com.example.unchain.presentation.allAddictionsScreen.viewModel.AllAddictionsViewModel
+import com.example.unchain.presentation.userProgressScreen.viewModel.ProgressViewModel
+import dagger.Binds
+import dagger.Module
+import dagger.multibindings.IntoMap
+
+@Module
+interface ViewModelModule {
+
+    @Binds
+    fun bindViewModelFactory(viewModelFactory: ViewModelFactory) : ViewModelProvider.Factory
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(AllAddictionsViewModel::class)
+    fun bindAddictionViewModel(allAddictionsViewModel: AllAddictionsViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(ProgressViewModel::class)
+    fun bindProgressViewModel(progressViewModel: ProgressViewModel) : ViewModel
+}
+package com.example.unchain.di.module
+
+import com.example.unchain.di.annotation.WorkerKey
+import com.example.unchain.domain.widgetWorker.WidgetWorker
+import com.example.unchain.domain.worker.ChildWorkerFactory
+import com.example.unchain.domain.worker.TestWorker
+import dagger.Binds
+import dagger.Module
+import dagger.multibindings.IntoMap
+
+@Module
+interface WorkerModule {
+
+    @Binds
+    @IntoMap
+    @WorkerKey(TestWorker::class)
+    fun bindTestWorker(factory: TestWorker.Factory) : ChildWorkerFactory
+
+    @Binds
+    @IntoMap
+    @WorkerKey(WidgetWorker::class)
+    fun bindWidgetWorker(factory: WidgetWorker.Factory) : ChildWorkerFactory
+}
+package com.example.unchain.di
+
+import android.app.Application
+import com.example.unchain.MainActivity
+import com.example.unchain.UnchainApp
+import com.example.unchain.di.annotation.ApplicationSingleton
+import com.example.unchain.di.module.AddictionInWidgetModule
+import com.example.unchain.di.module.DataBaseModule
+import com.example.unchain.di.module.GeminiApiModule
+import com.example.unchain.di.module.TimeProviderModule
+import com.example.unchain.di.module.UserRepositoryModule
+import com.example.unchain.di.module.ViewModelModule
+import com.example.unchain.di.module.WorkerModule
+import com.example.unchain.presentation.allAddictionsScreen.fragment.AllAddictionsFragment
+import com.example.unchain.presentation.userProgressScreen.fragment.UserProgressFragment
+import com.example.unchain.presentation.widget.MyWidgetProvider
+import com.example.unchain.presentation.widget.WidgetConfigActivity
+import dagger.BindsInstance
+import dagger.Component
+
+@ApplicationSingleton
+@Component(
+    modules = [
+        DataBaseModule::class,
+        TimeProviderModule::class,
+        UserRepositoryModule::class,
+        ViewModelModule::class,
+        WorkerModule::class,
+        AddictionInWidgetModule::class,
+        GeminiApiModule::class
+    ]
+)
+interface MainComponent {
+
+    fun inject(userProgressFragment: UserProgressFragment)
+    fun inject(allAddictionsFragment: AllAddictionsFragment)
+    fun inject(application: UnchainApp)
+    fun inject(activity: MainActivity)
+    fun inject(activity: WidgetConfigActivity)
+    fun inject(provider: MyWidgetProvider)
+
+    @Component.Factory
+    interface MainComponentFactory {
+        fun create(@BindsInstance application: Application): MainComponent
+    }
+}
+package com.example.unchain.di
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import javax.inject.Inject
+import javax.inject.Provider
+import kotlin.reflect.KClass
+
+class ViewModelFactory @Inject constructor(private val viewModels: @JvmSuppressWildcards Map<Class<out ViewModel>, Provider<ViewModel>>) :
+    ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        val viewModel = viewModels[modelClass]
+        return viewModel?.get() as T
+    }
+}
+package com.example.unchain.domain.models
+
+data class Addiction(
+    val id: Int,
+    val name: String,
+    val isActive: Boolean = false,
+)
+package com.example.unchain.domain.models
+
+data class AddictionInWidget(
+    val widgetId : Int,
+    val addictionId : Int
+)
+package com.example.unchain.domain.models
+
+data class AddictionWithProgress(
+    val id: Int,
+    val name: String,
+    val isActive : Boolean = false,
+    val currentStreak : Int? = 0
+)
+package com.example.unchain.domain.models
+
+data class UserProgress(
+    val addictionId : Int,
+    val startDate : Long,
+    val currentStreak : Int = 0,
+    val bestStreak : Int = 0,
+    val currency : Int = 0,
+    val lastCheckDate : Long = 0,
+    val dayResult : Boolean = false,
+    val hour : Int? = null,
+    val minute : Int? = null
+)
+package com.example.unchain.domain.provider
+
+import javax.inject.Inject
+
+class SystemTimeProvider @Inject constructor() : TimeProvider{
+    override fun now(): Long {
+        return System.currentTimeMillis()
+    }
+}
+package com.example.unchain.domain.provider
+
+interface TimeProvider {
+    fun now() : Long
+}
+package com.example.unchain.domain.repositories
+
+import com.example.unchain.domain.models.Addiction
+import com.example.unchain.domain.models.AddictionInWidget
+import com.example.unchain.domain.models.AddictionWithProgress
+
+interface AddictionInWidgetRepository {
+    suspend fun setAddictionInWidget(addiction: AddictionInWidget)
+    suspend fun getAddictions() : List<Addiction>
+    suspend fun getAddictionIdByWidgetId(widgetId : Int) : Int?
+    suspend fun getWidgetIdByAddictionId(addictionId : Int) : Int?
+    suspend fun getAddictionInfo(addictionId : Int) : AddictionWithProgress
+}
+package com.example.unchain.domain.repositories
+
+import com.example.unchain.domain.models.Addiction
+import com.example.unchain.domain.models.AddictionWithProgress
+import com.example.unchain.domain.models.UserProgress
+import kotlinx.coroutines.flow.Flow
+
+interface UserRepository {
+    suspend fun startAddiction(userProgress: UserProgress)
+    suspend fun markDayFail(userProgress: UserProgress)
+    suspend fun markDaySuccess(userProgress: UserProgress)
+    fun getUserProgress(addictionId: Int) : Flow<UserProgress?>
+    fun getAllAddictions() : Flow<List<AddictionWithProgress>>
+    suspend fun insertAddiction(addiction: Addiction)
+    suspend fun getAddictionById(addictionId: Int) : Addiction
+    suspend fun saveUserProgress(userProgress: UserProgress)
+}
+package com.example.unchain.domain.usecases
+
+import com.example.unchain.domain.repositories.AddictionInWidgetRepository
+import javax.inject.Inject
+
+class GetAddictionIdByWidgetIdUseCase @Inject constructor(private val addictionInWidgetRepository: AddictionInWidgetRepository) {
+    suspend fun execute(widgetId : Int) : Int?{
+        return addictionInWidgetRepository.getAddictionIdByWidgetId(widgetId)
+    }
+}
+package com.example.unchain.domain.usecases
+
+import com.example.unchain.domain.models.AddictionWithProgress
+import com.example.unchain.domain.repositories.AddictionInWidgetRepository
+import javax.inject.Inject
+
+class GetAddictionInfoForWidgetUseCase @Inject constructor(private val repository: AddictionInWidgetRepository) {
+    suspend fun execute(addictionId : Int) : AddictionWithProgress{
+        return repository.getAddictionInfo(addictionId)
+    }
+}
+package com.example.unchain.domain.usecases
+
+import com.example.unchain.domain.models.Addiction
+import com.example.unchain.domain.repositories.AddictionInWidgetRepository
+import javax.inject.Inject
+
+class GetAddictionsForWidgetConfig @Inject constructor(private val addictionInWidgetRepository: AddictionInWidgetRepository) {
+    suspend fun execute() : List<Addiction>{
+        return addictionInWidgetRepository.getAddictions()
+    }
+}
+package com.example.unchain.domain.usecases
+
+import com.example.unchain.domain.models.AddictionWithProgress
+import com.example.unchain.domain.repositories.UserRepository
+import kotlinx.coroutines.flow.Flow
+import javax.inject.Inject
+
+class GetAllAddictionsUseCase @Inject constructor(private val userRepository: UserRepository) {
+    fun execute(): Flow<List<AddictionWithProgress>> {
+        return userRepository.getAllAddictions()
+    }
+}
+package com.example.unchain.domain.usecases
+
+import com.example.unchain.domain.models.UserProgress
+import com.example.unchain.domain.repositories.UserRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.flow
+import javax.inject.Inject
+
+class GetUserProgressUseCase @Inject constructor(private val userRepository: UserRepository, private val startAddictionUseCase: StartAddictionUseCase) {
+    fun execute(addictionId : Int) : Flow<UserProgress?> = flow{
+        val userProgress = userRepository.getUserProgress(addictionId).firstOrNull()
+        val addiction = userRepository.getAddictionById(addictionId)
+        if (!addiction.isActive){
+            startAddictionUseCase.execute(addictionId)
+        }
+        emitAll(userRepository.getUserProgress(addictionId))
+    }
+}
+package com.example.unchain.domain.usecases
+
+import com.example.unchain.domain.repositories.AddictionInWidgetRepository
+import javax.inject.Inject
+
+class GetWidgetIdByAddictionIdUseCase @Inject constructor(private val addictionInWidgetRepository: AddictionInWidgetRepository) {
+    suspend fun execute(addictionId : Int) : Int? {
+        return addictionInWidgetRepository.getWidgetIdByAddictionId(addictionId)
+    }
+}
+package com.example.unchain.domain.usecases
+
+import com.example.unchain.data.db.AddictionDao
+import com.example.unchain.data.defaultAddictions.DefaultAddictions
+import com.example.unchain.data.models.Mapper
+import javax.inject.Inject
+
+class InitDbUseCase @Inject constructor(private val addictionDao: AddictionDao, private val mapper: Mapper) {
+    suspend fun execute(){
+        addictionDao.insertAll(mapper.entityToDbModelAddictionList(DefaultAddictions.list))
+    }
+}
+package com.example.unchain.domain.usecases
+
+import com.example.unchain.domain.models.UserProgress
+import com.example.unchain.domain.provider.TimeProvider
+import com.example.unchain.domain.repositories.UserRepository
+import com.example.unchain.domain.utils.isSameDay
+import javax.inject.Inject
+
+class MarkDayFailUseCase @Inject constructor(private val userRepository: UserRepository, private val timeProvider: TimeProvider) {
+
+    suspend fun execute(userProgress: UserProgress, addictionId : Int) : UserProgress {
+        val lastCheckDate = timeProvider.now()
+        if (!isSameDay(userProgress.lastCheckDate, lastCheckDate)){
+            makeAddictionNotActive(addictionId = addictionId)
+            return failDay(userProgress, lastCheckDate, addictionId)
+        }
+        return userProgress
+    }
+
+    private suspend fun failDay(userProgress: UserProgress, lastCheckDate : Long, addictionId : Int) : UserProgress{
+        val startDate = userProgress.startDate
+        val currentStreak = 0
+        val currency = 0
+        val dayResult = false
+        val newProgress = userProgress.copy(
+            startDate = startDate,
+            currentStreak = currentStreak,
+            currency = currency,
+            lastCheckDate = lastCheckDate,
+            dayResult = dayResult
+        )
+
+        userRepository.markDayFail(newProgress)
+        return newProgress
+    }
+
+    private suspend fun makeAddictionNotActive(addictionId: Int){
+        val addiction = userRepository.getAddictionById(addictionId)
+        val newAddiction = addiction.copy(isActive = false)
+        userRepository.insertAddiction(newAddiction)
+    }
+}
+package com.example.unchain.domain.usecases
+
+import com.example.unchain.domain.models.UserProgress
+import com.example.unchain.domain.provider.TimeProvider
+import com.example.unchain.domain.repositories.UserRepository
+import com.example.unchain.domain.utils.isSameDay
+import javax.inject.Inject
+
+class MarkDaySuccessUseCase @Inject constructor(private val userRepository: UserRepository, private val timeProvider: TimeProvider) {
+    suspend fun execute(userProgress: UserProgress, addictionId : Int) : UserProgress {
+        val lastCheckDate = timeProvider.now()
+        if (!isSameDay(userProgress.lastCheckDate, lastCheckDate)){
+            return newSuccessDay(userProgress, lastCheckDate, addictionId)
+        }
+        return userProgress
+    }
+
+    private suspend fun newSuccessDay(userProgress: UserProgress, lastCheckDate : Long, addictionId: Int) : UserProgress{
+        val dayResult = true
+        val currentStreak = userProgress.currentStreak + 1
+        val bestStreak = maxOf(currentStreak, userProgress.bestStreak)
+        val currency = userProgress.currency + currencyProgression(userProgress.currentStreak)
+        val newProgress = userProgress.copy(
+            currentStreak = currentStreak,
+            bestStreak = bestStreak,
+            currency = currency,
+            lastCheckDate = lastCheckDate,
+            dayResult = dayResult
+        )
+
+        userRepository.markDaySuccess(newProgress)
+        return newProgress
+    }
+
+
+    private fun currencyProgression(value: Int): Int {
+        return 100 + value * 10
+    }
+}
+package com.example.unchain.domain.usecases
+
+import com.example.unchain.domain.models.AddictionInWidget
+import com.example.unchain.domain.repositories.AddictionInWidgetRepository
+import javax.inject.Inject
+
+class SetAddictionForWidgetUseCase @Inject constructor(private val addictionInWidgetRepository: AddictionInWidgetRepository) {
+    suspend fun execute(addictionInWidget: AddictionInWidget){
+        addictionInWidgetRepository.setAddictionInWidget(addictionInWidget)
+    }
+}
+package com.example.unchain.domain.usecases
+
+import android.app.Application
+import android.content.Context
+import android.icu.util.TimeUnit
+import android.provider.ContactsContract
+import androidx.work.Data
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
+import com.example.unchain.domain.repositories.UserRepository
+import com.example.unchain.domain.worker.TestWorker
+import kotlinx.coroutines.flow.firstOrNull
+import java.sql.Time
+import java.util.Calendar
+import javax.inject.Inject
+
+
+class SetReminderUseCase @Inject constructor(private val userRepository: UserRepository, private val getUserProgressUseCase: GetUserProgressUseCase, private val context: Application) {
+    suspend fun execute(addictionId : Int, hour : Int, minute : Int){
+        val userProgress = getUserProgressUseCase.execute(addictionId).firstOrNull()
+        if (userProgress != null){
+            val newUserProgress = userProgress.copy(hour = hour, minute = minute)
+            startWorker(hour, minute, context, addictionId)
+            userRepository.saveUserProgress(newUserProgress)
+        }
+    }
+
+    private fun startWorker(hour: Int, minute: Int, context: Application, addictionId: Int){
+        val delay = calculateInitialDelay(hour, minute)
+        val data = makeData(addictionId)
+
+        val request = PeriodicWorkRequestBuilder<TestWorker>(10, java.util.concurrent.TimeUnit.SECONDS)
+            .setInitialDelay(delay, java.util.concurrent.TimeUnit.MILLISECONDS)
+            .setInputData(data)
+            .build()
+
+        WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+            WORK_NAME,
+            ExistingPeriodicWorkPolicy.REPLACE,
+            request
+        )
+    }
+
+    private fun makeData(addictionId: Int) : Data{
+        return Data.Builder()
+            .putInt(ADDICTION_ID_KEY, addictionId)
+            .build()
+    }
+
+    private fun calculateInitialDelay(hour: Int, minute: Int): Long {
+
+        val now = Calendar.getInstance()
+
+        val target = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, hour)
+            set(Calendar.MINUTE, minute)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+
+        if (target.before(now)) {
+            target.add(Calendar.DAY_OF_MONTH, 1)
+        }
+
+        return target.timeInMillis - now.timeInMillis
+    }
+
+    companion object{
+        private const val WORK_NAME = "UNCHAIN_REMIND_WORK"
+        const val ADDICTION_ID_KEY = "ADDICTION_ID_KEY"
+    }
+}
+package com.example.unchain.domain.usecases
+
+import com.example.unchain.domain.models.UserProgress
+import com.example.unchain.domain.provider.TimeProvider
+import com.example.unchain.domain.repositories.UserRepository
+import javax.inject.Inject
+
+class StartAddictionUseCase @Inject constructor(private val userRepository: UserRepository, private val timeProvider: TimeProvider) {
+    suspend fun execute(addictionId : Int){
+        val userProgress = UserProgress(addictionId = addictionId, startDate = timeProvider.now())
+        val oldAddiction = userRepository.getAddictionById(addictionId)
+        val addictionUpdate = oldAddiction.copy(isActive = true)
+        userRepository.insertAddiction(addictionUpdate)
+        userRepository.startAddiction(userProgress)
+    }
+}
+package com.example.unchain.domain.utils
+
+import android.icu.util.Calendar
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
+fun isSameDay(time1 : Long, time2 : Long) : Boolean{
+    val day1 = Calendar.getInstance().apply { timeInMillis = time1 }
+    val day2 = Calendar.getInstance().apply { timeInMillis = time2 }
+
+    //return day1.get(Calendar.YEAR) == day2.get(Calendar.YEAR) && day1.get(Calendar.DAY_OF_YEAR) == day2.get(Calendar.DAY_OF_YEAR)
+    return false
+}
+
+fun formattingStreak(value : Int) : String{
+    if(value == 1 ){
+       return "$value day"
+    }
+    return "$value days"
+}
+
+fun formattingDate(date : Long) : String{
+    val formatter = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
+    return formatter.format(Date(date))
+}
+package com.example.unchain.domain.widgetWorker
+
+import android.app.PendingIntent
+import android.appwidget.AppWidgetManager
+import android.content.Context
+import android.content.Intent
+import android.widget.RemoteViews
+import androidx.work.CoroutineWorker
+import androidx.work.ListenableWorker
+import androidx.work.WorkerParameters
+import com.example.unchain.R
+import com.example.unchain.domain.models.AddictionWithProgress
+import com.example.unchain.domain.models.UserProgress
+import com.example.unchain.domain.usecases.GetAddictionIdByWidgetIdUseCase
+import com.example.unchain.domain.usecases.GetAddictionInfoForWidgetUseCase
+import com.example.unchain.domain.usecases.GetUserProgressUseCase
+import com.example.unchain.domain.usecases.MarkDayFailUseCase
+import com.example.unchain.domain.usecases.MarkDaySuccessUseCase
+import com.example.unchain.domain.worker.ChildWorkerFactory
+import com.example.unchain.presentation.widget.MyWidgetProvider
+import kotlinx.coroutines.flow.firstOrNull
+import javax.inject.Inject
+
+class WidgetWorker(
+    context: Context,
+    workerParameters: WorkerParameters,
+    private val getAddictionIdByWidgetId: GetAddictionIdByWidgetIdUseCase,
+    private val getUserProgressUseCase: GetUserProgressUseCase,
+    private val getAddictionInfoForWidgetUseCase: GetAddictionInfoForWidgetUseCase,
+    private val markDaySuccessUseCase: MarkDaySuccessUseCase,
+    private val markDayFailUseCase: MarkDayFailUseCase
+) :
+    CoroutineWorker(context, workerParameters) {
+
+    override suspend fun doWork(): Result {
+        val widgetId = inputData.getInt(WIDGET_ID_KEY, INT_UNKNOWN_VALUE)
+        val action = inputData.getString(ACTION_KEY) ?: STRING_UNKNOWN_VALUE
+
+        val addictionId = getAddictionId(widgetId) ?: return Result.retry()
+        val userProgress = getUserProgressUseCase.execute(addictionId).firstOrNull()
+            ?: (getUserProgressUseCase.execute(addictionId).firstOrNull()
+                ?: return Result.retry())
+
+        when (action) {
+            SUCCESS_DAY_ACTION -> {
+                successDay(addictionId, userProgress)
+            }
+
+            FAIL_DAY_ACTION -> {
+                failDay(addictionId, userProgress)
+            }
+        }
+
+        val addictionWithInfo = getAddictionInfo(addictionId)
+        val views = RemoteViews(applicationContext.packageName, R.layout.widget_layout)
+        setAddictionInfo(addictionWithInfo, views)
+
+        val successIntent = makeIntent(applicationContext, widgetId, SUCCESS_DAY_ACTION)
+        val failIntent = makeIntent(applicationContext, widgetId, FAIL_DAY_ACTION)
+
+        val successPendingIntent = makePendingIntent(
+            applicationContext,
+            widgetId,
+            successIntent,
+            SUCCESS_ACTION_REQUEST_CODE
+        )
+        val failPendingIntent =
+            makePendingIntent(applicationContext, widgetId, failIntent, FAIL_ACTION_REQUEST_CODE)
+
+        setPendingToButton(successPendingIntent, R.id.successfulDayButton, views)
+        setPendingToButton(failPendingIntent, R.id.unsuccessfulDayButton, views)
+
+        val widgetManager = AppWidgetManager.getInstance(applicationContext)
+        widgetManager.updateAppWidget(widgetId, views)
+
+        return Result.success()
+    }
+
+    private fun makeIntent(context: Context, widgetId: Int, myAction: String): Intent {
+        return Intent(context, MyWidgetProvider::class.java).apply {
+            action = myAction
+
+            putExtra(
+                AppWidgetManager.EXTRA_APPWIDGET_ID,
+                widgetId
+            )
+        }
+    }
+
+    private fun setPendingToButton(
+        pendingIntent: PendingIntent,
+        buttonId: Int,
+        views: RemoteViews
+    ) {
+        views.setOnClickPendingIntent(buttonId, pendingIntent)
+    }
+
+    private fun makePendingIntent(
+        context: Context,
+        widgetId: Int,
+        intent: Intent,
+        requestCode: Int
+    ): PendingIntent {
+        return PendingIntent.getBroadcast(
+            context,
+            widgetId + requestCode,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+    }
+
+    private fun setAddictionInfo(addictionWithProgress: AddictionWithProgress, views: RemoteViews) {
+        views.apply {
+            setTextViewText(R.id.addictionNameTextView, addictionWithProgress.name)
+            setTextViewText(
+                R.id.currentCountTextView,
+                addictionWithProgress.currentStreak.toString()
+            )
+
+        }
+    }
+
+    private suspend fun successDay(addictionId: Int, userProgress: UserProgress) {
+        markDaySuccessUseCase.execute(userProgress, addictionId)
+    }
+
+    private suspend fun failDay(addictionId: Int, userProgress: UserProgress) {
+        markDayFailUseCase.execute(userProgress, addictionId)
+    }
+
+    private suspend fun getAddictionId(widgetId: Int): Int? {
+        return getAddictionIdByWidgetId.execute(widgetId)
+    }
+
+    private suspend fun getAddictionInfo(addictionId: Int): AddictionWithProgress {
+        return getAddictionInfoForWidgetUseCase.execute(addictionId)
+    }
+
+    companion object {
+        const val ACTION_KEY = "ACTION_KEY"
+        const val WIDGET_ID_KEY = "WIDGET_ID_KEY"
+
+        private const val INT_UNKNOWN_VALUE = -1
+        private const val STRING_UNKNOWN_VALUE = "STRING_UNKNOWN_VALUE"
+
+        private const val SUCCESS_DAY_ACTION = "com.example.unchain.SUCCESS_DAY"
+        private const val FAIL_DAY_ACTION = "com.example.unchain.FAIL_DAY"
+
+        private const val SUCCESS_ACTION_REQUEST_CODE = 1
+        private const val FAIL_ACTION_REQUEST_CODE = 2
+    }
+
+    class Factory @Inject constructor(
+        private val getAddictionIdByWidgetId: GetAddictionIdByWidgetIdUseCase,
+        private val getUserProgressUseCase: GetUserProgressUseCase,
+        private val getAddictionInfoForWidgetUseCase: GetAddictionInfoForWidgetUseCase,
+        private val markDaySuccessUseCase: MarkDaySuccessUseCase,
+        private val markDayFailUseCase: MarkDayFailUseCase
+    ) : ChildWorkerFactory {
+        override fun create(
+            context: Context,
+            workerParameters: WorkerParameters
+        ): ListenableWorker {
+            return WidgetWorker(
+                context,
+                workerParameters,
+                getAddictionIdByWidgetId,
+                getUserProgressUseCase,
+                getAddictionInfoForWidgetUseCase,
+                markDaySuccessUseCase,
+                markDayFailUseCase
+            )
+        }
+    }
+}
+package com.example.unchain.domain.worker
+
+import android.content.Context
+import androidx.work.ListenableWorker
+import androidx.work.WorkerParameters
+import com.example.unchain.domain.provider.TimeProvider
+import com.example.unchain.domain.repositories.UserRepository
+import com.example.unchain.domain.usecases.GetAddictionIdByWidgetIdUseCase
+import com.example.unchain.domain.usecases.GetAddictionInfoForWidgetUseCase
+import com.example.unchain.domain.usecases.GetUserProgressUseCase
+import com.example.unchain.domain.usecases.MarkDayFailUseCase
+import com.example.unchain.domain.usecases.MarkDaySuccessUseCase
+
+interface ChildWorkerFactory {
+    fun create(
+        context: Context,
+        workerParameters: WorkerParameters
+    ): ListenableWorker
+
+
+}
+package com.example.unchain.domain.worker
+
+import android.content.Context
+import androidx.work.ListenableWorker
+import androidx.work.WorkerFactory
+import androidx.work.WorkerParameters
+import com.example.unchain.domain.provider.TimeProvider
+import com.example.unchain.domain.repositories.UserRepository
+import com.example.unchain.domain.widgetWorker.WidgetWorker
+import javax.inject.Inject
+import javax.inject.Provider
+
+class MyWorkerFactory @Inject constructor(private val workers: @JvmSuppressWildcards Map<Class<out ListenableWorker>, Provider<ChildWorkerFactory>>, private val userRepository: UserRepository, private val timeProvider: TimeProvider) :
+    WorkerFactory() {
+    override fun createWorker(
+        appContext: Context,
+        workerClassName: String,
+        workerParameters: WorkerParameters
+    ): ListenableWorker? {
+        return when(workerClassName){
+            TestWorker::class.qualifiedName -> {
+                val childWorkerFactory = workers[TestWorker::class.java]?.get()
+                childWorkerFactory?.create(appContext, workerParameters)
+            }
+            WidgetWorker::class.qualifiedName -> {
+                val childWorkerFactory = workers[WidgetWorker::class.java]?.get()
+                childWorkerFactory?.create(appContext, workerParameters)
+            }
+            else -> null
+        }
+    }
+}
+package com.example.unchain.domain.worker
+
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
+import android.os.Build
+import android.util.Log
+import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
+import androidx.work.CoroutineWorker
+import androidx.work.ListenableWorker
+import androidx.work.Worker
+import androidx.work.WorkerParameters
+import com.example.unchain.R
+import com.example.unchain.domain.provider.TimeProvider
+import com.example.unchain.domain.repositories.UserRepository
+import com.example.unchain.domain.usecases.GetAddictionIdByWidgetIdUseCase
+import com.example.unchain.domain.usecases.GetAddictionInfoForWidgetUseCase
+import com.example.unchain.domain.usecases.GetUserProgressUseCase
+import com.example.unchain.domain.usecases.MarkDayFailUseCase
+import com.example.unchain.domain.usecases.MarkDaySuccessUseCase
+import com.example.unchain.domain.usecases.SetReminderUseCase
+import com.example.unchain.domain.utils.isSameDay
+import kotlinx.coroutines.flow.firstOrNull
+import java.sql.Time
+import javax.inject.Inject
+
+
+class TestWorker(
+    private val context: Context,
+    workerParameters: WorkerParameters,
+    private val userRepository: UserRepository,
+    private val timeProvider: TimeProvider
+) :
+    CoroutineWorker(context, workerParameters) {
+
+    override suspend fun doWork(): Result {
+        val userProgress = userRepository.getUserProgress(getAddictionId()).firstOrNull()
+            ?: return Result.success()
+        val lastCheckDate = userProgress.lastCheckDate
+        if (!isSameDay(lastCheckDate, timeProvider.now())) {
+            showNotification()
+            Log.d("WORKER_TAG", "Days not same")
+        } else {
+            Log.d("WORKER_TAG", "Days is same")
+        }
+        return Result.success()
+    }
+
+    private fun getAddictionId(): Int {
+        return inputData.getInt(ADDICTION_ID_KEY, DEFAULT_INT_VALUE)
+    }
+
+    private fun showNotification() {
+        createChannel()
+        val notification = createNotification()
+        val notificationManager =
+            ContextCompat.getSystemService(context, NotificationManager::class.java)
+        val notificationId = getAddictionId()
+        notificationManager?.notify(notificationId, notification)
+        Log.d("WORKER_TAG", "Show success")
+    }
+
+    private fun createNotification(): Notification {
+        return NotificationCompat.Builder(context, CHANNEL_ID)
+            .setContentTitle(CONTENT_TITLE)
+            .setContentText(CONTENT_TEXT)
+            .setSmallIcon(R.drawable.ic_launcher_background)
+            .build()
+    }
+
+    private fun createChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(CHANNEL_ID, CHANNEL_NAME, CHANNEL_IMPORTANCE)
+
+            val notificationManager =
+                ContextCompat.getSystemService(context, NotificationManager::class.java)
+            notificationManager?.createNotificationChannel(channel)
+        }
+    }
+
+
+    class Factory @Inject constructor(
+        private val userRepository: UserRepository,
+        private val timeProvider: TimeProvider
+    ) : ChildWorkerFactory {
+        override fun create(
+            context: Context,
+            workerParameters: WorkerParameters
+        ): ListenableWorker {
+            return TestWorker(context, workerParameters, userRepository, timeProvider)
+        }
+
+    }
+
+    companion object {
+        private const val CHANNEL_ID = "CHANNEL_ID_101"
+        private const val CHANNEL_NAME = "UNCHAIN_CHANNEL_NAME"
+        private const val CHANNEL_IMPORTANCE = NotificationManager.IMPORTANCE_DEFAULT
+
+        private const val CONTENT_TITLE = "Р’Р°С€ Unchain"
+        private const val CONTENT_TEXT = "РџСЂРёС€Р»Рѕ РІСЂРµРјСЏ РѕС‚РјРµС‚РёС‚СЊ РґРµРЅСЊ!"
+
+        private const val ADDICTION_ID_KEY = SetReminderUseCase.ADDICTION_ID_KEY
+
+        private const val DEFAULT_INT_VALUE = -1
+    }
+}
+package com.example.unchain.presentation.allAddictionsScreen.fragment
+
+import android.content.Context
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.unchain.R
+import com.example.unchain.UnchainApp
+import com.example.unchain.databinding.FragmentAllAddictionsBinding
+import com.example.unchain.domain.models.AddictionWithProgress
+import com.example.unchain.presentation.allAddictionsScreen.recyclerView.AllAddictionsAdapter
+import com.example.unchain.presentation.allAddictionsScreen.viewModel.AllAddictionUiState
+import com.example.unchain.presentation.allAddictionsScreen.viewModel.AllAddictionsViewModel
+import com.example.unchain.presentation.userProgressScreen.fragment.UserProgressFragment
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+class AllAddictionsFragment : Fragment() {
+
+    @Inject
+    lateinit var viewModelFactory: ViewModelProvider.Factory
+
+    private lateinit var addictionViewModel: AllAddictionsViewModel
+    private lateinit var allAddictionsAdapter: AllAddictionsAdapter
+    private lateinit var binding: FragmentAllAddictionsBinding
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        (requireActivity().application as UnchainApp).appComponent.inject(this)
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        addictionViewModel = ViewModelProvider(
+            this,
+            viewModelFactory
+        )[AllAddictionsViewModel::class.java]
+    }
+
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        binding = FragmentAllAddictionsBinding.inflate(inflater, container, false)
+        return  binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        setUpRecyclerView()
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.CREATED) {
+                addictionViewModel.state.collect{
+                    loadAddiction(it)
+                }
+            }
+        }
+    }
+
+    private suspend fun loadAddiction(state: AllAddictionUiState){
+        when{
+            state.isLoading -> {
+
+            }
+            state.addictionList.isNotEmpty() -> {
+                allAddictionsAdapter.submitList(state.addictionList)
+            }
+            state.error != null -> {
+
+            }
+        }
+    }
+
+
+    private fun setUpRecyclerView() {
+        allAddictionsAdapter = AllAddictionsAdapter()
+
+        allAddictionsAdapter.startButtonClick = { addiction ->
+            openUserProgress(addiction)
+        }
+
+        allAddictionsAdapter.progressAddictionCardClick = { addiction ->
+            openUserProgress(addiction)
+        }
+
+        binding.addictionsRecyclerView.apply {
+            layoutManager = LinearLayoutManager(context)
+            adapter = allAddictionsAdapter
+        }
+    }
+
+    private fun openUserProgress(addiction: AddictionWithProgress) {
+        val fragment = UserProgressFragment.newInstanceUserProgress(addiction.id, addiction.name)
+        openUserProgressFragment(fragment)
+    }
+
+    private fun openUserProgressFragment(fragment: UserProgressFragment){
+        parentFragmentManager.beginTransaction()
+            .replace(R.id.fragmentContainer, fragment)
+            .addToBackStack(null)
+            .commit()
+    }
+
+}
+package com.example.unchain.presentation.allAddictionsScreen.recyclerView
+
+import androidx.recyclerview.widget.DiffUtil
+import com.example.unchain.domain.models.AddictionWithProgress
+
+class AddictionDiffUtil(private val oldList: List<AddictionWithProgress>, private val newList: List<AddictionWithProgress>) : DiffUtil.Callback() {
+    override fun getOldListSize(): Int {
+        return oldList.size
+    }
+
+    override fun getNewListSize(): Int {
+        return newList.size
+    }
+
+    override fun areItemsTheSame(
+        oldItemPosition: Int,
+        newItemPosition: Int
+    ): Boolean {
+        return oldList[oldItemPosition].id == newList[newItemPosition].id
+    }
+
+    override fun areContentsTheSame(
+        oldItemPosition: Int,
+        newItemPosition: Int
+    ): Boolean {
+        return oldList[oldItemPosition] == newList[newItemPosition]
+    }
+}
+package com.example.unchain.presentation.allAddictionsScreen.recyclerView
+
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.Button
+import android.widget.TextView
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.RecyclerView
+import com.example.unchain.R
+import com.example.unchain.domain.models.AddictionWithProgress
+
+class AllAddictionsAdapter() : RecyclerView.Adapter<AllAddictionsAdapter.AddictionViewHolder>() {
+
+    private var addictionsList: List<AddictionWithProgress> = emptyList()
+    var startButtonClick: ((AddictionWithProgress) -> Unit)? = null
+    var progressAddictionCardClick :((AddictionWithProgress) -> Unit)? = null
+
+    fun submitList(list: List<AddictionWithProgress>) {
+        val addictionDiffUtil = AddictionDiffUtil(addictionsList, list)
+        val resultDiffUtil = DiffUtil.calculateDiff(addictionDiffUtil)
+
+        addictionsList = list
+        resultDiffUtil.dispatchUpdatesTo(this)
+    }
+
+    override fun onCreateViewHolder(
+        parent: ViewGroup,
+        viewType: Int
+    ): AddictionViewHolder {
+
+        val resource = getResource(viewType)
+        val view =
+            LayoutInflater.from(parent.context).inflate(resource, parent, false)
+
+        return if (viewType == START_THEME) StartAddictionViewHolder(view) else ProgressAddictionViewHolder(view)
+    }
+
+    override fun onBindViewHolder(
+        holder: AddictionViewHolder,
+        position: Int
+    ) {
+        holder.bind(addictionsList[position])
+
+        if (addictionsList[position].isActive){
+            (holder as ProgressAddictionViewHolder).view.setOnClickListener {
+                progressAddictionCardClick?.invoke(addictionsList[position])
+            }
+        }
+    }
+
+    override fun getItemCount(): Int = addictionsList.size
+
+    override fun getItemViewType(position: Int): Int {
+        return if (addictionsList[position].isActive){
+            PROGRESS_THEME
+        }
+        else{
+            START_THEME
+        }
+    }
+
+    private fun getResource(viewType: Int) : Int{
+        return when(viewType){
+            START_THEME -> {
+                R.layout.addiction_card
+            }
+            PROGRESS_THEME -> {
+                R.layout.addiction_card_progress
+            }
+            else -> {
+                throw RuntimeException("Unknown ViewType")
+            }
+        }
+    }
+
+    companion object{
+        private const val START_THEME = 100
+        private const val PROGRESS_THEME = 101
+    }
+
+    abstract class AddictionViewHolder(view: View) : RecyclerView.ViewHolder(view){
+        abstract fun bind(addiction: AddictionWithProgress)
+    }
+
+
+    inner class StartAddictionViewHolder(view: View) : AddictionViewHolder(view) {
+        private val addictionName: TextView = view.findViewById<TextView>(R.id.addictionNameTextView)
+        private val startButton: Button = view.findViewById<Button>(R.id.startButton)
+
+        override fun bind(addiction: AddictionWithProgress) {
+            addictionName.text = addiction.name
+            startButton.setOnClickListener {
+                startButtonClick?.invoke(addiction)
+            }
+        }
+    }
+
+    inner class ProgressAddictionViewHolder(val view : View) : AddictionViewHolder(view){
+        private val addictionName: TextView = view.findViewById<TextView>(R.id.addictionNameTextView)
+        private val progress: TextView = view.findViewById<TextView>(R.id.progressTextView)
+
+        override fun bind(addiction: AddictionWithProgress) {
+            addictionName.text = addiction.name
+            progress.text = addiction.currentStreak.toString()
+        }
+    }
+
+}
+package com.example.unchain.presentation.allAddictionsScreen.viewModel
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.unchain.domain.usecases.GetAllAddictionsUseCase
+import com.example.unchain.domain.usecases.GetUserProgressUseCase
+import com.example.unchain.domain.usecases.StartAddictionUseCase
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+class AllAddictionsViewModel @Inject constructor(
+    private val startAddictionUseCase: StartAddictionUseCase,
+    private val getAllAddictionsUseCase: GetAllAddictionsUseCase,
+    private val getUserProgressUseCase: GetUserProgressUseCase
+) : ViewModel() {
+
+    private val _state = getAllAddictionsUseCase.execute()
+        .map { AllAddictionUiState(isLoading = false, addictionList = it) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AllAddictionUiState())
+
+    val state = _state
+
+    fun getUserProgress(addictionId : Int){
+        viewModelScope.launch {
+            getUserProgressUseCase.execute(addictionId)
+        }
+    }
+}
+package com.example.unchain.presentation.allAddictionsScreen.viewModel
+
+import com.example.unchain.domain.models.AddictionWithProgress
+
+data class AllAddictionUiState(
+    val isLoading: Boolean = true,
+    val addictionList : List<AddictionWithProgress> = emptyList<AddictionWithProgress>(),
+    val error: String? = null
+)
+package com.example.unchain.presentation.userProgressScreen.fragment
+
+import android.app.TimePickerDialog
+import android.appwidget.AppWidgetManager
+import android.content.Context
+import android.content.Intent
+import android.icu.util.Calendar
+import android.os.Bundle
+import android.util.Log
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.Toast
+import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import com.example.unchain.UnchainApp
+import com.example.unchain.databinding.FragmentUserProgressBinding
+import com.example.unchain.domain.models.UserProgress
+import com.example.unchain.domain.utils.formattingDate
+import com.example.unchain.domain.utils.formattingStreak
+import com.example.unchain.presentation.userProgressScreen.viewModel.ProgressViewModel
+import com.example.unchain.presentation.widget.MyWidgetProvider
+import com.example.unchain.presentation.widget.WidgetConfigActivity
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+class UserProgressFragment : Fragment() {
+
+    @Inject
+    lateinit var viewModelFactory: ViewModelProvider.Factory
+    private lateinit var binding: FragmentUserProgressBinding
+    private lateinit var progressViewModel: ProgressViewModel
+
+    private var userProgressInfo: UserProgress? = null
+    private var addictionId = UNKNOWN_ID
+    private var addictionName = UNKNOWN_NAME
+
+    private var hour : Int? = null
+    private var minute : Int? = null
+    private var shouldShowTimePicker : Boolean = true
+
+    private var widgetId : Int? = null
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        (requireActivity().application as UnchainApp).appComponent.inject(this)
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        progressViewModel = ViewModelProvider(
+            this,
+            viewModelFactory
+        )[ProgressViewModel::class.java]
+        parseArgs()
+    }
+
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        // Inflate the layout for this fragment
+        binding = FragmentUserProgressBinding.inflate(inflater, container, false)
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            progressViewModel.loadProgress(addictionId)
+            widgetId = progressViewModel.getWidgetIdByAddictionId(addictionId)
+            repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                progressViewModel.userProgressFlow.collect {
+                    it.userProgress?.let { progress ->
+                        setValues(progress)
+                        Log.d("TIME_PICKER", "Check picked: ${progress.hour} ${progress.minute}")
+                    }
+
+                    if (it.shouldShowTimePicker && shouldShowTimePicker){
+                        shouldShowTimePicker = false
+                        showTimePicker()
+                    }
+                }
+            }
+            
+        }
+
+        binding.successfulDayButton.setOnClickListener {
+            userProgressInfo?.let {
+                progressViewModel.markDaySuccess(it, addictionId)
+                updateWidget()
+            }
+        }
+
+        binding.unsuccessfulDayButton.setOnClickListener {
+            userProgressInfo?.let {
+                progressViewModel.markDayFail(it, addictionId)
+                updateWidget()
+            }
+        }
+    }
+
+    private fun updateWidget(){
+        widgetId?.let {
+            val intent = Intent(context, MyWidgetProvider::class.java).apply {
+                action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+
+                putExtra(
+                    AppWidgetManager.EXTRA_APPWIDGET_IDS,
+                    intArrayOf(it)
+                )
+            }
+            context?.sendBroadcast(intent)
+        }
+    }
+
+    private fun parseArgs() {
+        val args = requireArguments()
+        parseId(args)
+        parseName(args)
+    }
+
+    private fun parseId(args: Bundle) {
+        if (!args.containsKey(ADDICTION_ID)) {
+            throw RuntimeException("Unknown key for id")
+        }
+
+        val id = args.getInt(ADDICTION_ID)
+        if (id < 0) {
+            throw RuntimeException("Incorrect ID")
+        }
+
+        addictionId = id
+    }
+
+    private fun parseName(args: Bundle) {
+        if (!args.containsKey(ADDICTION_NAME)) {
+            throw RuntimeException("Unknown key for name")
+        }
+        addictionName = args.getString(ADDICTION_NAME).toString()
+    }
+
+
+    private fun setValues(userProgress: UserProgress?) {
+        userProgressInfo = userProgress?.apply {
+            binding.addictionNameTextView.text = addictionName
+            binding.currentRecordValue.text = formattingStreak(userProgress.currentStreak)
+            binding.bestRecordValue.text = formattingStreak(userProgress.bestStreak)
+            binding.currencyAmountTextView.text = userProgress.currency.toString()
+            binding.startDateTextView.text = formattingDate(userProgress.startDate)
+        }
+    }
+
+    private fun showTimePicker(){
+        val calendar = Calendar.getInstance()
+        val currentHour = calendar.get(Calendar.HOUR_OF_DAY)
+        val currentMinute = calendar.get(Calendar.MINUTE)
+
+        val timeSetListener = TimePickerDialog.OnTimeSetListener{ _, hour, minute ->
+            progressViewModel.setReminder(addictionId, hour, minute)
+        }
+
+        val timePickerDialog = TimePickerDialog(
+            requireContext(),          // Р•СЃР»Рё РјС‹ РІРѕ Fragment. Р•СЃР»Рё РІ Activity -> this
+            0,                         // 0 РѕР·РЅР°С‡Р°РµС‚ СЃС‚Р°РЅРґР°СЂС‚РЅСѓСЋ С‚РµРјСѓ
+            timeSetListener,           // РќР°С€ СЃР»СѓС€Р°С‚РµР»СЊ
+            currentHour,               // РќР°С‡Р°Р»СЊРЅС‹Р№ С‡Р°СЃ
+            currentMinute,             // РќР°С‡Р°Р»СЊРЅР°СЏ РјРёРЅСѓС‚Р°
+            true                       // true = 24-С‡Р°СЃРѕРІРѕР№ С„РѕСЂРјР°С‚ (13:00), false = 1:00 PM
+        )
+
+        timePickerDialog.show()
+    }
+
+    companion object {
+        private const val ADDICTION_ID = "addiction_ID"
+        private const val ADDICTION_NAME = "addiction_name"
+
+        private const val UNKNOWN_ID = -1
+        private const val UNKNOWN_NAME = "UNKNOWN_ADDICTION"
+
+        fun newInstanceUserProgress(addictionId: Int, addictionName: String): UserProgressFragment {
+            return UserProgressFragment().apply {
+                arguments = Bundle().apply {
+                    putInt(ADDICTION_ID, addictionId)
+                    putString(ADDICTION_NAME, addictionName)
+                }
+            }
+        }
+    }
+}
+package com.example.unchain.presentation.userProgressScreen.viewModel
+
+import com.example.unchain.domain.models.UserProgress
+
+data class ProgressUiState(
+    val isLoading : Boolean = true,
+    val userProgress : UserProgress? = null,
+    val error : String? = null,
+    val shouldShowTimePicker : Boolean = false
+)
+package com.example.unchain.presentation.userProgressScreen.viewModel
+
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.unchain.domain.models.UserProgress
+import com.example.unchain.domain.usecases.GetUserProgressUseCase
+import com.example.unchain.domain.usecases.GetWidgetIdByAddictionIdUseCase
+import com.example.unchain.domain.usecases.MarkDayFailUseCase
+import com.example.unchain.domain.usecases.MarkDaySuccessUseCase
+import com.example.unchain.domain.usecases.SetReminderUseCase
+import com.example.unchain.domain.usecases.StartAddictionUseCase
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+class ProgressViewModel @Inject constructor(
+    private val getUserProgressUseCase: GetUserProgressUseCase,
+    private val markDayFailUseCase: MarkDayFailUseCase,
+    private val markDaySuccessUseCase: MarkDaySuccessUseCase,
+    private val setReminderUseCase: SetReminderUseCase,
+    private val getWidgetIdByAddictionIdUseCase: GetWidgetIdByAddictionIdUseCase
+) : ViewModel() {
+
+    val addictionId = MutableStateFlow<Int>(-1)
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val userProgressFlow = addictionId
+        .filter { it > -1 }
+        .flatMapLatest { getUserProgressUseCase.execute(it) }
+        .map {
+            val shouldShowTimePicker = it?.hour == null && it?.minute == null
+            ProgressUiState(isLoading = false, userProgress = it, shouldShowTimePicker = shouldShowTimePicker)
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ProgressUiState())
+
+    fun loadProgress(id: Int){
+        addictionId.value = id
+    }
+
+    fun markDaySuccess(userProgress: UserProgress, addictionId: Int){
+        viewModelScope.launch {
+            val update = markDaySuccessUseCase.execute(userProgress, addictionId)
+        }
+    }
+
+    fun markDayFail(userProgress: UserProgress, addictionId: Int){
+        viewModelScope.launch {
+            val update = markDayFailUseCase.execute(userProgress, addictionId)
+        }
+    }
+
+    fun setReminder(addictionId: Int, hour : Int, minute : Int){
+        viewModelScope.launch {
+            setReminderUseCase.execute(addictionId, hour, minute)
+        }
+    }
+
+    suspend fun getWidgetIdByAddictionId(addictionId : Int) : Int?{
+        return getWidgetIdByAddictionIdUseCase.execute(addictionId)
+    }
+
+}
+package com.example.unchain.presentation.widget
+
+import android.app.PendingIntent
+import android.appwidget.AppWidgetManager
+import android.appwidget.AppWidgetProvider
+import android.content.Context
+import android.content.Intent
+import android.util.Log
+import android.widget.RemoteViews
+import android.widget.Toast
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
+import com.example.unchain.R
+import com.example.unchain.UnchainApp
+import com.example.unchain.domain.models.AddictionWithProgress
+import com.example.unchain.domain.models.UserProgress
+import com.example.unchain.domain.usecases.GetAddictionIdByWidgetIdUseCase
+import com.example.unchain.domain.usecases.GetAddictionInfoForWidgetUseCase
+import com.example.unchain.domain.usecases.GetUserProgressUseCase
+import com.example.unchain.domain.usecases.MarkDayFailUseCase
+import com.example.unchain.domain.usecases.MarkDaySuccessUseCase
+import com.example.unchain.domain.widgetWorker.WidgetWorker
+import com.example.unchain.domain.widgetWorker.WidgetWorker.Companion.ACTION_KEY
+import com.example.unchain.domain.widgetWorker.WidgetWorker.Companion.WIDGET_ID_KEY
+import com.example.unchain.presentation.widget.WidgetConfigActivity
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import javax.inject.Inject
+
+class MyWidgetProvider : AppWidgetProvider() {
+
+    override fun onReceive(context: Context?, intent: Intent?) {
+        super.onReceive(context, intent)
+        if (intent != null && context != null) {
+
+            (context.applicationContext as UnchainApp).appComponent.inject(this)
+
+            val widgetId = intent.getIntExtra(
+                AppWidgetManager.EXTRA_APPWIDGET_ID,
+                -1
+            )
+
+            val action = intent.action
+
+            startWorker(context, widgetId, action)
+        }
+    }
+
+    override fun onUpdate(
+        context: Context,
+        appWidgetManager: AppWidgetManager,
+        appWidgetIds: IntArray
+    ) {
+        (context.applicationContext as UnchainApp).appComponent.inject(this)
+        updateWidget(context, appWidgetManager, appWidgetIds)
+    }
+
+    private fun updateWidget(
+        context: Context,
+        appWidgetManager: AppWidgetManager,
+        appWidgetIds: IntArray
+    ) {
+        CoroutineScope(Dispatchers.IO).launch {
+            for (id in appWidgetIds) {
+                startWorker(context, id, null)
+            }
+        }
+    }
+
+    private fun startWorker(context: Context, widgetId: Int, action: String?) {
+        val inputData = workDataOf(
+            ACTION_KEY to action,
+            WIDGET_ID_KEY to widgetId
+        )
+
+        val request = OneTimeWorkRequestBuilder<WidgetWorker>()
+            .setInputData(inputData)
+            .build()
+
+        WorkManager.getInstance(context)
+            .enqueue(request)
+    }
+
+}
+package com.example.unchain.presentation.widget
+
+import android.R.attr.action
+import android.appwidget.AppWidgetManager
+import android.content.Intent
+import android.os.Bundle
+import android.widget.Toast
+import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.unchain.R
+import com.example.unchain.UnchainApp
+import com.example.unchain.databinding.ActivityWidgetConfigBinding
+import com.example.unchain.domain.models.AddictionInWidget
+import com.example.unchain.domain.usecases.GetAddictionsForWidgetConfig
+import com.example.unchain.domain.usecases.SetAddictionForWidgetUseCase
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import javax.inject.Inject
+
+class WidgetConfigActivity : AppCompatActivity() {
+
+    @Inject
+    lateinit var setAddictionForWidgetUseCase: SetAddictionForWidgetUseCase
+    @Inject
+    lateinit var getAddictionsForWidgetConfig: GetAddictionsForWidgetConfig
+
+    private lateinit var binding: ActivityWidgetConfigBinding
+    private lateinit var widgetAdapter: WidgetConfigAdapter
+    private var appWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+        binding = ActivityWidgetConfigBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.widgetSelectionRoot)) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            insets
+        }
+
+        (application as UnchainApp).appComponent.inject(this)
+
+        setResult(RESULT_CANCELED)
+        getWidgetId()
+        if (appWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID){
+            finish()
+            return
+        }
+
+        setUpRecyclerView()
+    }
+
+    private fun setUpRecyclerView(){
+        widgetAdapter = WidgetConfigAdapter()
+
+        widgetAdapter.addictionCardClick = {
+            val addictionInWidget = AddictionInWidget(appWidgetId, it.id)
+
+            lifecycleScope.launch {
+                val result = setAddictionForWidgetUseCase.execute(addictionInWidget)
+                updateWidget()
+                setResult(RESULT_OK)
+                finish()
+            }
+
+
+        }
+
+        binding.widgetAddictionsRecyclerView.apply {
+            layoutManager = LinearLayoutManager(this@WidgetConfigActivity)
+            adapter = widgetAdapter
+        }
+
+        lifecycleScope.launch {
+            getAddictions()
+        }
+    }
+
+    private suspend fun getAddictions(){
+        widgetAdapter.submitList(getAddictionsForWidgetConfig.execute())
+    }
+
+    private fun getWidgetId(){
+        val intent = intent
+        intent?.let {
+            if (it.extras != null){
+                appWidgetId = intent.getIntExtra(
+                    AppWidgetManager.EXTRA_APPWIDGET_ID,
+                    AppWidgetManager.INVALID_APPWIDGET_ID
+                )
+            }
+        }
+    }
+
+    private fun updateWidget(){
+        val intent = Intent(this@WidgetConfigActivity, MyWidgetProvider::class.java).apply {
+            action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+
+            putExtra(
+                AppWidgetManager.EXTRA_APPWIDGET_IDS,
+                intArrayOf(appWidgetId)
+            )
+        }
+        sendBroadcast(intent)
+    }
+
+}
+package com.example.unchain.presentation.widget
+
+import android.appwidget.AppWidgetManager
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.recyclerview.widget.ListAdapter
+import androidx.recyclerview.widget.RecyclerView
+import com.example.unchain.databinding.AddictionCardForWidgetBinding
+import com.example.unchain.domain.models.Addiction
+import javax.inject.Inject
+
+class WidgetConfigAdapter : ListAdapter<Addiction, WidgetConfigAdapter.WidgetConfigViewHolder>(WidgetConfigDiffCallBack()
+) {
+
+    var addictionCardClick : ((Addiction) -> Unit)? = null
+
+    override fun onCreateViewHolder(
+        parent: ViewGroup,
+        viewType: Int
+    ): WidgetConfigViewHolder {
+
+        val binding = AddictionCardForWidgetBinding.inflate(
+            LayoutInflater.from(parent.context),
+            parent,
+            false
+        )
+
+        return WidgetConfigViewHolder(binding)
+    }
+
+    override fun onBindViewHolder(
+        holder: WidgetConfigViewHolder,
+        position: Int
+    ) {
+        holder.bind(getItem(position))
+    }
+
+
+    inner class WidgetConfigViewHolder(val binding: AddictionCardForWidgetBinding) : RecyclerView.ViewHolder(binding.root) {
+
+        fun bind(addiction: Addiction){
+            binding.addictionNameTextView.text = addiction.name
+
+            itemView.setOnClickListener {
+                addictionCardClick?.invoke(addiction)
+            }
+        }
+    }
+}
+package com.example.unchain.presentation.widget
+
+import androidx.recyclerview.widget.DiffUtil
+import com.example.unchain.domain.models.Addiction
+
+class WidgetConfigDiffCallBack : DiffUtil.ItemCallback<Addiction>() {
+    override fun areItemsTheSame(
+        oldItem: Addiction,
+        newItem: Addiction
+    ): Boolean {
+        return oldItem.id == newItem.id
+    }
+
+    override fun areContentsTheSame(
+        oldItem: Addiction,
+        newItem: Addiction
+    ): Boolean {
+        return oldItem == newItem
+    }
+
+}
+package com.example.unchain
+
+import android.content.pm.PackageManager
+import android.os.Build
+import android.os.Bundle
+import android.util.Log
+import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
+import androidx.work.OneTimeWorkRequest
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import com.example.unchain.databinding.ActivityMainBinding
+import com.example.unchain.di.MainComponent
+import com.example.unchain.domain.usecases.InitDbUseCase
+import com.example.unchain.domain.worker.TestWorker
+import com.example.unchain.presentation.allAddictionsScreen.fragment.AllAddictionsFragment
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+class MainActivity : AppCompatActivity() {
+
+
+    private lateinit var binding: ActivityMainBinding
+
+    @Inject
+    lateinit var initDbUseCase: InitDbUseCase
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        (application as UnchainApp).appComponent.inject(this)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        enableEdgeToEdge()
+        setContentView(binding.root)
+        ViewCompat.setOnApplyWindowInsetsListener(binding.fragmentContainer) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            insets
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
+                    1001
+                )
+            }
+        }
+
+        lifecycleScope.launch {
+            //РґР»СЏ С‚РµСЃС‚РѕРІ
+            initDbUseCase.execute()
+        }
+
+
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.fragmentContainer, AllAddictionsFragment())
+            .commit()
+    }
+}
+package com.example.unchain
+
+import android.app.Application
+import androidx.work.Configuration
+import com.example.unchain.data.db.AppDataBase
+import com.example.unchain.data.models.Mapper
+import com.example.unchain.di.DaggerMainComponent
+import com.example.unchain.di.MainComponent
+import com.example.unchain.domain.usecases.InitDbUseCase
+import com.example.unchain.domain.worker.MyWorkerFactory
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+class UnchainApp : Application(), Configuration.Provider {
+
+    @Inject
+    lateinit var myWorkerFactory: MyWorkerFactory
+    lateinit var appComponent : MainComponent
+
+
+    override fun onCreate() {
+        super.onCreate()
+        appComponent = DaggerMainComponent.factory().create(this)
+        appComponent.inject(this)
+    }
+
+    override val workManagerConfiguration: Configuration
+        get() = Configuration.Builder()
+            .setWorkerFactory(myWorkerFactory)
+            .build()
+
+}
+package com.example.unchain
+
+import org.junit.Test
+
+import org.junit.Assert.*
+
+/**
+ * Example local unit test, which will execute on the development machine (host).
+ *
+ * See [testing documentation](http://d.android.com/tools/testing).
+ */
+class ExampleUnitTest {
+    @Test
+    fun addition_isCorrect() {
+        assertEquals(4, 2 + 2)
+    }
+}

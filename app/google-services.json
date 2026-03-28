@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "246171073469",
+    "project_id": "unchain-6c813",
+    "storage_bucket": "unchain-6c813.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:246171073469:android:0b9de01fa3d21acc24b0d4",
+        "android_client_info": {
+          "package_name": "com.example.unchain"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB0E8Kb9hRtgesU91oVCpcy7GszvDUpo_A"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -16,6 +16,10 @@ import com.example.unchain.data.remote.GeminiApiService
 import com.example.unchain.data.remote.GeminiRequestDto
 import com.example.unchain.data.remote.PartRequestDto
 import com.example.unchain.databinding.ActivityMainBinding
+import com.example.unchain.domain.models.gemini.ContentRequest
+import com.example.unchain.domain.models.gemini.GeminiRequest
+import com.example.unchain.domain.models.gemini.PartRequest
+import com.example.unchain.domain.usecases.GetGeminiResponseUseCase
 import com.example.unchain.domain.usecases.InitDbUseCase
 import com.example.unchain.presentation.allAddictionsScreen.fragment.AllAddictionsFragment
 import kotlinx.coroutines.launch
@@ -28,7 +32,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
 
     @Inject
-    lateinit var geminiApiService: GeminiApiService
+    lateinit var getGeminiResponse : GetGeminiResponseUseCase
     @Inject
     lateinit var initDbUseCase: InitDbUseCase
 
@@ -56,31 +60,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         lifecycleScope.launch {
-            try {
-                initDbUseCase.execute()
-
-                val text = "Привет, до тебя дошел мой запрос?"
-                val partRequest = PartRequestDto(text)
-                val contentRequest = ContentRequestDto(listOf(partRequest))
-                val geminiRequest = GeminiRequestDto(listOf(contentRequest))
-
-                val response = geminiApiService.getGeminiResponse(
-                    model = "gemini-2.5-flash",
-                    apiKey = BuildConfig.GEMINI_API_KEY,
-                    geminiRequest = geminiRequest
-                )
-
-                val responseText =
-                    response.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text ?: "EMPTY"
-
-                Log.d("GEMINI_API_TEST", responseText)
-
-            } catch (e: HttpException) {
-                val errorBody = e.response()?.errorBody()?.string()
-                Log.e("GEMINI_API_TEST", "HTTP 400 Error: $errorBody", e)
-            } catch (e: Exception) {
-                Log.e("GEMINI_API_TEST", "ERROR", e)
-            }
+            initDbUseCase.execute()
         }
 
 

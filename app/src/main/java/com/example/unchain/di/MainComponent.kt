@@ -7,6 +7,7 @@ import com.example.unchain.di.annotation.ApplicationSingleton
 import com.example.unchain.di.module.AddictionInWidgetModule
 import com.example.unchain.di.module.DataBaseModule
 import com.example.unchain.di.module.GeminiApiModule
+import com.example.unchain.di.module.GeminiRepositoryModel
 import com.example.unchain.di.module.TimeProviderModule
 import com.example.unchain.di.module.UserRepositoryModule
 import com.example.unchain.di.module.ViewModelModule
@@ -27,7 +28,8 @@ import dagger.Component
         ViewModelModule::class,
         WorkerModule::class,
         AddictionInWidgetModule::class,
-        GeminiApiModule::class
+        GeminiApiModule::class,
+        GeminiRepositoryModel::class
     ]
 )
 interface MainComponent {

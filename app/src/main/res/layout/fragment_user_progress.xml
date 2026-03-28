@@ -193,5 +193,62 @@
             android:layout_height="wrap_content"
             android:visibility="invisible"/>
 
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/motivationCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="4dp"
+            android:padding="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/motivationTitleTextView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_marginBottom="12dp"
+                    android:text="Мотивация"
+                    android:textColor="@android:color/black"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+                <androidx.core.widget.NestedScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="200dp"
+                    android:fillViewport="true">
+
+                    <TextView
+                        android:id="@+id/motivationMessageTextView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:padding="5dp"
+                        android:text="Если тебе тяжело держаться, нажми на кнопку и получи заряд мотивации"
+                        android:textColor="#444444"
+                        android:textSize="16sp" />
+
+                </androidx.core.widget.NestedScrollView>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/getMotivationButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="Получить мотивацию"
+                    android:textAllCaps="false"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    app:backgroundTint="@color/pigment_blue"
+                    app:cornerRadius="16dp" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
     </LinearLayout>
 </ScrollView>

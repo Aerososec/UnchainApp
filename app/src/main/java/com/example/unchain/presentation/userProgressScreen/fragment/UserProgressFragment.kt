@@ -86,7 +86,7 @@ class UserProgressFragment : Fragment() {
                     }
                 }
             }
-            
+
         }
 
         binding.successfulDayButton.setOnClickListener {
@@ -102,6 +102,19 @@ class UserProgressFragment : Fragment() {
                 updateWidget()
             }
         }
+
+        binding.getMotivationButton.setOnClickListener {
+            viewLifecycleOwner.lifecycleScope.launch{
+                binding.progressBar.visibility = View.VISIBLE
+                binding.motivationMessageTextView.text = "ГЕНЕРИРУЮ МОТИВАЦИОННУЮ РЕЧЬ..."
+                val progress = userProgressInfo ?: return@launch
+                val response = progressViewModel.getGeminiMotivationResponse(progress, addictionName)
+                Log.d("GEMINI_API_TEST", "${response.candidates?.get(0)?.content?.parts[0]?.text}")
+                binding.motivationMessageTextView.text = response.candidates?.get(0)?.content?.parts[0]?.text
+                binding.progressBar.visibility = View.INVISIBLE
+            }
+        }
+
     }
 
     private fun updateWidget(){
@@ -154,6 +167,9 @@ class UserProgressFragment : Fragment() {
             binding.startDateTextView.text = formattingDate(userProgress.startDate)
         }
     }
+
+
+
 
     private fun showTimePicker(){
         val calendar = Calendar.getInstance()

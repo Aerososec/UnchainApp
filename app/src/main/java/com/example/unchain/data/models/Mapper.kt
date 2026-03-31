@@ -33,6 +33,10 @@ class Mapper @Inject constructor() {
         )
     }
 
+    fun dbModelToEntityToAddictionList(addiction: List<AddictionDbModel>) : List<Addiction>{
+        return addiction.map { dbModelToEntityAddiction(it) }
+    }
+
 
     fun entityToDbModelAddictionList(addictions: List<Addiction>) = addictions.map {
         entityToDbModelAddiction(it)

@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import com.example.unchain.data.models.AddictionDbModel
 import com.example.unchain.data.models.AddictionInWidgetDbModel
 import com.example.unchain.data.models.AddictionWithProgressDbModel
 import com.example.unchain.domain.models.Addiction
@@ -14,7 +15,7 @@ interface AddictionInWidgetDao {
     suspend fun  insertAddictionInWidget(addictionInWidgetDbModel: AddictionInWidgetDbModel)
 
     @Query("SELECT * FROM addiction")
-    suspend fun getAddictionsForWidgetConfig() : List<Addiction>
+    suspend fun getAddictionsForWidgetConfig() : List<AddictionDbModel>
 
     @Query("SELECT addictionId FROM addiction_in_widget WHERE widgetId =:widgetId LIMIT 1")
     suspend fun getAddictionIdByWidgetId(widgetId : Int) : Int?

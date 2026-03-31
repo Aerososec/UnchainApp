@@ -38,8 +38,6 @@ class UserProgressFragment : Fragment() {
     private var addictionId = UNKNOWN_ID
     private var addictionName = UNKNOWN_NAME
 
-    private var hour : Int? = null
-    private var minute : Int? = null
     private var shouldShowTimePicker : Boolean = true
 
     private var widgetId : Int? = null
@@ -86,7 +84,13 @@ class UserProgressFragment : Fragment() {
                     }
                 }
             }
+        }
 
+        viewLifecycleOwner.lifecycleScope.launch{
+            progressViewModel.motivationFlow.collect { response ->
+                binding.motivationMessageTextView.text = response?.candidates?.get(0)?.content?.parts[0]?.text
+                binding.progressBar.visibility = View.INVISIBLE
+            }
         }
 
         binding.successfulDayButton.setOnClickListener {
@@ -104,16 +108,17 @@ class UserProgressFragment : Fragment() {
         }
 
         binding.getMotivationButton.setOnClickListener {
-            viewLifecycleOwner.lifecycleScope.launch{
-                binding.progressBar.visibility = View.VISIBLE
-                binding.motivationMessageTextView.text = "ГЕНЕРИРУЮ МОТИВАЦИОННУЮ РЕЧЬ..."
-                val progress = userProgressInfo ?: return@launch
-                val response = progressViewModel.getGeminiMotivationResponse(progress, addictionName)
-                Log.d("GEMINI_API_TEST", "${response.candidates?.get(0)?.content?.parts[0]?.text}")
-                binding.motivationMessageTextView.text = response.candidates?.get(0)?.content?.parts[0]?.text
-                binding.progressBar.visibility = View.INVISIBLE
-            }
+            setGeminiResponse()
         }
+
+    }
+
+    private fun setGeminiResponse(){
+        binding.progressBar.visibility = View.VISIBLE
+        binding.motivationMessageTextView.text = "ГЕНЕРИРУЮ МОТИВАЦИОННУЮ РЕЧЬ..."
+
+        val progress = userProgressInfo ?: return
+        progressViewModel.getGeminiMotivationResponse(progress, addictionName)
 
     }
 
@@ -161,10 +166,10 @@ class UserProgressFragment : Fragment() {
     private fun setValues(userProgress: UserProgress?) {
         userProgressInfo = userProgress?.apply {
             binding.addictionNameTextView.text = addictionName
-            binding.currentRecordValue.text = formattingStreak(userProgress.currentStreak)
-            binding.bestRecordValue.text = formattingStreak(userProgress.bestStreak)
+            binding.currentRecordValue.text = userProgress.currentStreak.formattingStreak()
+            binding.bestRecordValue.text = userProgress.bestStreak.formattingStreak()
             binding.currencyAmountTextView.text = userProgress.currency.toString()
-            binding.startDateTextView.text = formattingDate(userProgress.startDate)
+            binding.startDateTextView.text = userProgress.startDate.formattingDate()
         }
     }
 

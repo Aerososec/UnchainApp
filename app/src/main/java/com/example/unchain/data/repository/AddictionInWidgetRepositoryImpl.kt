@@ -17,7 +17,7 @@ class AddictionInWidgetRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getAddictions(): List<Addiction> {
-       return addictionInWidgetDao.getAddictionsForWidgetConfig()
+       return mapper.dbModelToEntityToAddictionList(addictionInWidgetDao.getAddictionsForWidgetConfig())
     }
 
     override suspend fun getAddictionIdByWidgetId(widgetId: Int): Int? {

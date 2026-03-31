@@ -13,14 +13,16 @@ fun isSameDay(time1 : Long, time2 : Long) : Boolean{
     return false
 }
 
-fun formattingStreak(value : Int) : String{
-    if(value == 1 ){
-       return "$value day"
+fun Int.formattingStreak() : String{
+    if(this == 1 ){
+       return "$this day"
     }
-    return "$value days"
+    return "$this days"
 }
 
-fun formattingDate(date : Long) : String{
+fun Long.formattingDate() : String{
     val formatter = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
-    return formatter.format(Date(date))
+    return formatter.format(Date(this))
 }
+
+

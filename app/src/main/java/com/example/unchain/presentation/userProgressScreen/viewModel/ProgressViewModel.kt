@@ -36,7 +36,13 @@ class ProgressViewModel @Inject constructor(
     private val getGeminiResponseUseCase: GetGeminiResponseUseCase
 ) : ViewModel() {
 
+
+    private val _motivationFlow = MutableStateFlow<GeminiResponse?>(null)
+    val motivationFlow = _motivationFlow
+
     val addictionId = MutableStateFlow<Int>(-1)
+
+
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val userProgressFlow = addictionId
@@ -78,18 +84,20 @@ class ProgressViewModel @Inject constructor(
         return getWidgetIdByAddictionIdUseCase.execute(addictionId)
     }
 
-    suspend fun getGeminiMotivationResponse(
+    fun getGeminiMotivationResponse(
         userProgress: UserProgress,
         addictionName: String
-    ) : GeminiResponse{
-        val text = createTextForMotivationGeminiRequest(userProgress, addictionName)
-        val request = createMotivationGeminiRequest(text)
-        return try {
-            getGeminiResponseUseCase.execute(request)
-        }
-        catch (e : Exception){
-            Log.d("GEMINI_API_TEST", e.message.toString())
-            throw e
+    ){
+        viewModelScope.launch {
+            val text = createTextForMotivationGeminiRequest(userProgress, addictionName)
+            val request = createMotivationGeminiRequest(text)
+            try {
+                _motivationFlow.value = getGeminiResponseUseCase.execute(request)
+            }
+            catch (e : Exception){
+                Log.d("GEMINI_API_TEST", e.message.toString())
+                throw e
+            }
         }
     }
 

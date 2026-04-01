@@ -1,6 +1,6 @@
 **Проект: "Unchain" – Android-приложение для отслеживания привычек и борьбы с зависимостями.**
 
-**Технологии:** Kotlin, Android SDK, MVVM, Clean Architecture, Coroutines, Flow, Room, WorkManager, Dagger 2, AppWidget, BroadcastReceiver, ViewBinding.
+**Технологии:** Kotlin, Android SDK, MVVM, Clean Architecture, Coroutines, Flow, Room, WorkManager, Dagger 2, AppWidget, BroadcastReceiver, ViewBinding, Retrofit
 
 ---
 

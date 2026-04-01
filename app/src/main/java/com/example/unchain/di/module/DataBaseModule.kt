@@ -6,6 +6,7 @@ import androidx.room.RoomDatabase
 import com.example.unchain.data.db.AddictionDao
 import com.example.unchain.data.db.AddictionInWidgetDao
 import com.example.unchain.data.db.AppDataBase
+import com.example.unchain.data.db.MessageDao
 import com.example.unchain.data.db.UserProgressDao
 import com.example.unchain.di.annotation.ApplicationSingleton
 import dagger.Module
@@ -40,6 +41,11 @@ class DataBaseModule {
     @Provides
     fun provideAddictionInWidgetDao(db : AppDataBase) : AddictionInWidgetDao{
         return db.addictionInWidgetDao()
+    }
+
+    @Provides
+    fun provideMessageDao(db : AppDataBase) : MessageDao{
+        return db.messageDao()
     }
 
     companion object{

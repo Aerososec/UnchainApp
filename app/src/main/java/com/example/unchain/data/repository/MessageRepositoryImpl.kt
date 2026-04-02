@@ -11,6 +11,7 @@ import com.example.unchain.domain.models.gemini.PartRequest
 import com.example.unchain.domain.repositories.GeminiRepository
 import com.example.unchain.domain.repositories.MessageRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
@@ -22,9 +23,11 @@ class MessageRepositoryImpl @Inject constructor(
     override suspend fun sendMessage(message: Message): GeminiResponse {
         insertMessage(message)
         return try {
-            val request = makeRequest(message)
+            val chatHistory = getChatForAddiction(message.addictionId).firstOrNull() ?: emptyList()
+            val request = makeRequest(chatHistory)
             val geminiAnswer = geminiRepository.getGeminiResponse(request)
-            geminiAnswer.candidates?.get(0)?.content?.parts?.get(0)?.text.let {
+            val text = geminiAnswer.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text
+            text?.let {
                 val answerMessage = makeMessage(it.toString(), message.addictionId)
                 insertMessage(answerMessage)
             }
@@ -43,15 +46,25 @@ class MessageRepositoryImpl @Inject constructor(
         messageDao.insertMessage(messageMapper.entityToDbModel(message))
     }
 
-    private fun makeRequest(message: Message) : GeminiRequest{
-        val partRequest = PartRequest(message.text)
-        val contentRequest = ContentRequest(listOf(partRequest))
-        val geminiRequest = GeminiRequest(listOf(contentRequest))
-        return geminiRequest
+    private fun makeRequest(chatHistory: List<Message>): GeminiRequest {
+        val contents = chatHistory
+            .takeLast(CHAT_HISTORY_MAX_SIZE)
+            .map { message ->
+                ContentRequest(
+                    parts = listOf(
+                        PartRequest(message.text)
+                    )
+                )
+            }
+        return GeminiRequest(contents)
     }
 
     private fun makeMessage(text : String, addictionId: Int) : Message{
-        val message = Message(id = 0, text = text, role = MessageRole.GEMINI, addictionId = addictionId)
+        val message = Message(id = 0, text = text, role = MessageRole.GEMINI.value, addictionId = addictionId)
         return message
+    }
+
+    companion object{
+        private const val CHAT_HISTORY_MAX_SIZE = 10
     }
 }

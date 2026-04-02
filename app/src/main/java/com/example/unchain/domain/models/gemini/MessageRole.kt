@@ -1,6 +1,6 @@
 package com.example.unchain.domain.models.gemini
 
-enum class MessageRole{
-    GEMINI,
-    USER
+enum class MessageRole(val value : String){
+    GEMINI("model"),
+    USER("user")
 }

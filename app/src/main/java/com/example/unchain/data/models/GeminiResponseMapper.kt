@@ -26,7 +26,8 @@ class GeminiResponseMapper @Inject constructor() {
 
     private fun dtoToEntityContent(dto: ContentResponseDto): ContentResponse {
         return ContentResponse(
-            parts = dto.parts.map { dtoToEntityPart(it) }
+            parts = dto.parts.map { dtoToEntityPart(it) },
+            dto.role
         )
     }
 

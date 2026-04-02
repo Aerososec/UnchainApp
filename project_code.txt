@@ -181,6 +181,80 @@ data class AddictionWithProgressDbModel(
 )
 package com.example.unchain.data.models
 
+import com.example.unchain.data.remote.ContentRequestDto
+import com.example.unchain.data.remote.GeminiRequestDto
+import com.example.unchain.data.remote.PartRequestDto
+import com.example.unchain.domain.models.gemini.ContentRequest
+import com.example.unchain.domain.models.gemini.GeminiRequest
+import com.example.unchain.domain.models.gemini.PartRequest
+import javax.inject.Inject
+
+class GeminiRequestMapper @Inject constructor() {
+    private fun dtoToEntityPart(partRequestDto: PartRequestDto) : PartRequest{
+        return PartRequest(partRequestDto.text)
+    }
+
+    private fun entityToDtoPart(partRequest: PartRequest) : PartRequestDto{
+        return PartRequestDto(partRequest.text)
+    }
+
+    private fun dtoToEntityContent(contentRequestDto: ContentRequestDto) : ContentRequest{
+        return ContentRequest(contentRequestDto.parts.map { dtoToEntityPart(it) })
+    }
+
+    private fun entityToDtoContent(contentRequest: ContentRequest) : ContentRequestDto{
+        return ContentRequestDto(contentRequest.parts.map { entityToDtoPart(it) })
+    }
+
+    fun entityToDtoRequest(geminiRequest: GeminiRequest) : GeminiRequestDto{
+        return GeminiRequestDto(geminiRequest.contents.map { entityToDtoContent(it) })
+    }
+
+    fun dtoToEntityRequest(geminiRequestDto: GeminiRequestDto) : GeminiRequest{
+        return GeminiRequest(geminiRequestDto.contents.map { dtoToEntityContent(it) })
+    }
+
+}
+package com.example.unchain.data.models
+
+import com.example.unchain.data.remote.CandidatesDto
+import com.example.unchain.data.remote.ContentResponseDto
+import com.example.unchain.data.remote.GeminiResponseDto
+import com.example.unchain.data.remote.PartResponseDto
+import com.example.unchain.domain.models.gemini.Candidates
+import com.example.unchain.domain.models.gemini.ContentResponse
+import com.example.unchain.domain.models.gemini.GeminiResponse
+import com.example.unchain.domain.models.gemini.PartResponse
+import javax.inject.Inject
+
+class GeminiResponseMapper @Inject constructor() {
+
+    fun dtoToEntity(dto: GeminiResponseDto): GeminiResponse {
+        return GeminiResponse(
+            candidates = dto.candidates?.map { dtoToEntityCandidate(it) }
+        )
+    }
+
+    private fun dtoToEntityCandidate(dto: CandidatesDto): Candidates {
+        return Candidates(
+            content = dtoToEntityContent(dto.content)
+        )
+    }
+
+    private fun dtoToEntityContent(dto: ContentResponseDto): ContentResponse {
+        return ContentResponse(
+            parts = dto.parts.map { dtoToEntityPart(it) }
+        )
+    }
+
+    private fun dtoToEntityPart(dto: PartResponseDto): PartResponse {
+        return PartResponse(
+            text = dto.text
+        )
+    }
+}
+package com.example.unchain.data.models
+
 import com.example.unchain.domain.models.Addiction
 import com.example.unchain.domain.models.AddictionInWidget
 import com.example.unchain.domain.models.AddictionWithProgress
@@ -293,38 +367,38 @@ import retrofit2.http.Path
 interface GeminiApiService {
     @POST("v1beta/models/{model}:generateContent")
     suspend fun getGeminiResponse(
+        @Path("model") model : String,
         @Header("x-goog-api-key") apiKey : String,
-        @Body geminiRequest: GeminiRequest,
-        @Path("model") model : String
-    ) : GeminiResponse
+        @Body geminiRequest: GeminiRequestDto
+    ) : GeminiResponseDto
 }
 package com.example.unchain.data.remote
 
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class GeminiRequest(val contents: List<ContentRequest>)
+data class GeminiRequestDto(val contents: List<ContentRequestDto>)
 
 @Serializable
-data class ContentRequest(val parts: List<PartRequest>)
+data class ContentRequestDto(val parts: List<PartRequestDto>)
 
 @Serializable
-data class PartRequest(val text: String)
+data class PartRequestDto(val text: String)
 package com.example.unchain.data.remote
 
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class GeminiResponse(val candidates : List<Candidates>? = null)
+data class GeminiResponseDto(val candidates : List<CandidatesDto>? = null)
 
 @Serializable
-data class Candidates(val content : ContentResponse)
+data class CandidatesDto(val content : ContentResponseDto)
 
 @Serializable
-data class ContentResponse(val parts : List<PartResponse>)
+data class ContentResponseDto(val parts : List<PartResponseDto>)
 
 @Serializable
-data class PartResponse(val text : String?)
+data class PartResponseDto(val text : String?)
 package com.example.unchain.data.repository
 
 import com.example.unchain.data.db.AddictionInWidgetDao
@@ -357,6 +431,31 @@ class AddictionInWidgetRepositoryImpl @Inject constructor(
 
     override suspend fun getAddictionInfo(addictionId: Int): AddictionWithProgress {
         return mapper.dbModelToEntityAddictionWithProgress(addictionInWidgetDao.getAddictionInfo(addictionId))
+    }
+}
+package com.example.unchain.data.repository
+
+import com.example.unchain.BuildConfig
+import com.example.unchain.data.models.GeminiRequestMapper
+import com.example.unchain.data.models.GeminiResponseMapper
+import com.example.unchain.data.remote.GeminiApiService
+import com.example.unchain.domain.models.gemini.GeminiRequest
+import com.example.unchain.domain.models.gemini.GeminiResponse
+import com.example.unchain.domain.repositories.GeminiRepository
+import javax.inject.Inject
+
+class GeminiRepositoryImpl @Inject constructor(
+    private val geminiApiService: GeminiApiService,
+    private val geminiRequestMapper: GeminiRequestMapper,
+    private val geminiResponseMapper: GeminiResponseMapper
+) : GeminiRepository {
+    override suspend fun getGeminiResponse(geminiRequest: GeminiRequest): GeminiResponse {
+        val response = geminiApiService.getGeminiResponse(
+            BuildConfig.GEMINI_MODEL,
+            BuildConfig.GEMINI_API_KEY,
+            geminiRequestMapper.entityToDtoRequest(geminiRequest)
+        )
+        return geminiResponseMapper.dtoToEntity(response)
     }
 }
 package com.example.unchain.data.repository
@@ -523,8 +622,10 @@ import dagger.Module
 import dagger.Provides
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
+import java.util.concurrent.TimeUnit
 
 @Module
 class GeminiApiModule {
@@ -533,10 +634,20 @@ class GeminiApiModule {
     @Provides
     fun provideGeminiApi() : GeminiApiService{
         val baseUrl = "https://generativelanguage.googleapis.com/"
-        val converter = Json.asConverterFactory("application/json".toMediaType())
+        val converter = Json{
+            ignoreUnknownKeys = true
+            coerceInputValues = true
+        }.asConverterFactory("application/json".toMediaType())
+
+        val client = OkHttpClient.Builder()
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(90, TimeUnit.SECONDS)
+            .writeTimeout(90, TimeUnit.SECONDS)
+            .build()
 
         val retrofit = Retrofit.Builder()
             .baseUrl(baseUrl)
+            .client(client)
             .addConverterFactory(converter)
             .build()
 
@@ -544,6 +655,18 @@ class GeminiApiModule {
     }
 }
 
+package com.example.unchain.di.module
+
+import com.example.unchain.data.repository.GeminiRepositoryImpl
+import com.example.unchain.domain.repositories.GeminiRepository
+import dagger.Binds
+import dagger.Module
+
+@Module
+interface GeminiRepositoryModel {
+    @Binds
+    fun bindGeminiRepository(geminiRepositoryImpl: GeminiRepositoryImpl) : GeminiRepository
+}
 package com.example.unchain.di.module
 
 import com.example.unchain.domain.provider.SystemTimeProvider
@@ -630,6 +753,7 @@ import com.example.unchain.di.annotation.ApplicationSingleton
 import com.example.unchain.di.module.AddictionInWidgetModule
 import com.example.unchain.di.module.DataBaseModule
 import com.example.unchain.di.module.GeminiApiModule
+import com.example.unchain.di.module.GeminiRepositoryModel
 import com.example.unchain.di.module.TimeProviderModule
 import com.example.unchain.di.module.UserRepositoryModule
 import com.example.unchain.di.module.ViewModelModule
@@ -650,7 +774,8 @@ import dagger.Component
         ViewModelModule::class,
         WorkerModule::class,
         AddictionInWidgetModule::class,
-        GeminiApiModule::class
+        GeminiApiModule::class,
+        GeminiRepositoryModel::class
     ]
 )
 interface MainComponent {
@@ -682,6 +807,22 @@ class ViewModelFactory @Inject constructor(private val viewModels: @JvmSuppressW
         return viewModel?.get() as T
     }
 }
+package com.example.unchain.domain.models.gemini
+
+data class GeminiRequest(val contents: List<ContentRequest>)
+
+data class ContentRequest(val parts: List<PartRequest>)
+
+data class PartRequest(val text: String)
+package com.example.unchain.domain.models.gemini
+
+data class GeminiResponse(val candidates : List<Candidates>? = null)
+
+data class Candidates(val content : ContentResponse)
+
+data class ContentResponse(val parts : List<PartResponse>)
+
+data class PartResponse(val text : String?)
 package com.example.unchain.domain.models
 
 data class Addiction(
@@ -745,6 +886,14 @@ interface AddictionInWidgetRepository {
 }
 package com.example.unchain.domain.repositories
 
+import com.example.unchain.domain.models.gemini.GeminiRequest
+import com.example.unchain.domain.models.gemini.GeminiResponse
+
+interface GeminiRepository {
+    suspend fun getGeminiResponse(geminiRequest: GeminiRequest) : GeminiResponse
+}
+package com.example.unchain.domain.repositories
+
 import com.example.unchain.domain.models.Addiction
 import com.example.unchain.domain.models.AddictionWithProgress
 import com.example.unchain.domain.models.UserProgress
@@ -802,6 +951,18 @@ import javax.inject.Inject
 class GetAllAddictionsUseCase @Inject constructor(private val userRepository: UserRepository) {
     fun execute(): Flow<List<AddictionWithProgress>> {
         return userRepository.getAllAddictions()
+    }
+}
+package com.example.unchain.domain.usecases
+
+import com.example.unchain.domain.models.gemini.GeminiRequest
+import com.example.unchain.domain.models.gemini.GeminiResponse
+import com.example.unchain.domain.repositories.GeminiRepository
+import javax.inject.Inject
+
+class GetGeminiResponseUseCase @Inject constructor(private val geminiRepository: GeminiRepository) {
+    suspend fun execute(geminiRequest: GeminiRequest) : GeminiResponse{
+        return geminiRepository.getGeminiResponse(geminiRequest)
     }
 }
 package com.example.unchain.domain.usecases
@@ -1769,7 +1930,7 @@ class UserProgressFragment : Fragment() {
                     }
                 }
             }
-            
+
         }
 
         binding.successfulDayButton.setOnClickListener {
@@ -1785,6 +1946,19 @@ class UserProgressFragment : Fragment() {
                 updateWidget()
             }
         }
+
+        binding.getMotivationButton.setOnClickListener {
+            viewLifecycleOwner.lifecycleScope.launch{
+                binding.progressBar.visibility = View.VISIBLE
+                binding.motivationMessageTextView.text = "Р“Р•РќР•Р РР РЈР® РњРћРўРР’РђР¦РРћРќРќРЈР® Р Р•Р§Р¬..."
+                val progress = userProgressInfo ?: return@launch
+                val response = progressViewModel.getGeminiMotivationResponse(progress, addictionName)
+                Log.d("GEMINI_API_TEST", "${response.candidates?.get(0)?.content?.parts[0]?.text}")
+                binding.motivationMessageTextView.text = response.candidates?.get(0)?.content?.parts[0]?.text
+                binding.progressBar.visibility = View.INVISIBLE
+            }
+        }
+
     }
 
     private fun updateWidget(){
@@ -1838,6 +2012,9 @@ class UserProgressFragment : Fragment() {
         }
     }
 
+
+
+
     private fun showTimePicker(){
         val calendar = Calendar.getInstance()
         val currentHour = calendar.get(Calendar.HOUR_OF_DAY)
@@ -1888,11 +2065,17 @@ data class ProgressUiState(
 )
 package com.example.unchain.presentation.userProgressScreen.viewModel
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.unchain.domain.models.UserProgress
+import com.example.unchain.domain.models.gemini.ContentRequest
+import com.example.unchain.domain.models.gemini.GeminiRequest
+import com.example.unchain.domain.models.gemini.GeminiResponse
+import com.example.unchain.domain.models.gemini.PartRequest
+import com.example.unchain.domain.usecases.GetGeminiResponseUseCase
 import com.example.unchain.domain.usecases.GetUserProgressUseCase
 import com.example.unchain.domain.usecases.GetWidgetIdByAddictionIdUseCase
 import com.example.unchain.domain.usecases.MarkDayFailUseCase
@@ -1914,7 +2097,8 @@ class ProgressViewModel @Inject constructor(
     private val markDayFailUseCase: MarkDayFailUseCase,
     private val markDaySuccessUseCase: MarkDaySuccessUseCase,
     private val setReminderUseCase: SetReminderUseCase,
-    private val getWidgetIdByAddictionIdUseCase: GetWidgetIdByAddictionIdUseCase
+    private val getWidgetIdByAddictionIdUseCase: GetWidgetIdByAddictionIdUseCase,
+    private val getGeminiResponseUseCase: GetGeminiResponseUseCase
 ) : ViewModel() {
 
     val addictionId = MutableStateFlow<Int>(-1)
@@ -1925,34 +2109,103 @@ class ProgressViewModel @Inject constructor(
         .flatMapLatest { getUserProgressUseCase.execute(it) }
         .map {
             val shouldShowTimePicker = it?.hour == null && it?.minute == null
-            ProgressUiState(isLoading = false, userProgress = it, shouldShowTimePicker = shouldShowTimePicker)
+            ProgressUiState(
+                isLoading = false,
+                userProgress = it,
+                shouldShowTimePicker = shouldShowTimePicker
+            )
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ProgressUiState())
 
-    fun loadProgress(id: Int){
+    fun loadProgress(id: Int) {
         addictionId.value = id
     }
 
-    fun markDaySuccess(userProgress: UserProgress, addictionId: Int){
+    fun markDaySuccess(userProgress: UserProgress, addictionId: Int) {
         viewModelScope.launch {
             val update = markDaySuccessUseCase.execute(userProgress, addictionId)
         }
     }
 
-    fun markDayFail(userProgress: UserProgress, addictionId: Int){
+    fun markDayFail(userProgress: UserProgress, addictionId: Int) {
         viewModelScope.launch {
             val update = markDayFailUseCase.execute(userProgress, addictionId)
         }
     }
 
-    fun setReminder(addictionId: Int, hour : Int, minute : Int){
+    fun setReminder(addictionId: Int, hour: Int, minute: Int) {
         viewModelScope.launch {
             setReminderUseCase.execute(addictionId, hour, minute)
         }
     }
 
-    suspend fun getWidgetIdByAddictionId(addictionId : Int) : Int?{
+    suspend fun getWidgetIdByAddictionId(addictionId: Int): Int? {
         return getWidgetIdByAddictionIdUseCase.execute(addictionId)
+    }
+
+    suspend fun getGeminiMotivationResponse(
+        userProgress: UserProgress,
+        addictionName: String
+    ) : GeminiResponse{
+        val text = createTextForMotivationGeminiRequest(userProgress, addictionName)
+        val request = createMotivationGeminiRequest(text)
+        return try {
+            getGeminiResponseUseCase.execute(request)
+        }
+        catch (e : Exception){
+            Log.d("GEMINI_API_TEST", e.message.toString())
+            throw e
+        }
+    }
+
+    private fun createMotivationGeminiRequest(text: String): GeminiRequest {
+        val partRequest = PartRequest(text)
+        val contentRequest = ContentRequest(listOf(partRequest))
+        val geminiRequest = GeminiRequest(listOf(contentRequest))
+        return geminiRequest
+    }
+
+    private fun createTextForMotivationGeminiRequest(
+        userProgress: UserProgress,
+        addictionName: String
+    ): String {
+
+        val addiction = addictionName
+        val currentStreak = userProgress.currentStreak
+        val bestStreak = userProgress.bestStreak
+
+
+        return """
+        РўРІРѕСЏ СЂРѕР»СЊ: РўС‹ вЂ” Р»РµРіРµРЅРґР°СЂРЅС‹Р№ РЅР°СЃС‚Р°РІРЅРёРє, СЃРёРЅС‚РµР· РјСѓРґСЂРѕРіРѕ РІРѕРёРЅР°, РєР°РїРёС‚Р°РЅР° Р·РІРµР·РґРЅРѕРіРѕ РєРѕСЂР°Р±Р»СЏ Рё СЃРІСЏС‰РµРЅРЅРёРєР°. 
+        РўС‹ РіРѕРІРѕСЂРёС€СЊ СЃ РіР»СѓР±РѕРєРѕР№ С…Р°СЂРёР·РјРѕР№, РёСЃРїРѕР»СЊР·СѓРµС€СЊ РјРѕС‰РЅС‹Рµ РјРµС‚Р°С„РѕСЂС‹ Рё РіРѕРІРѕСЂРёС€СЊ РїРѕ СЃСѓС‰РµСЃС‚РІСѓ. 
+        РўС‹ РЅРµ Р¶Р°Р»РµРµС€СЊ, РЅРѕ Рё РЅРµ РґР°РµС€СЊ СЃРїСѓСЃРєСѓ.
+
+        Р—Р°РґР°С‡Р°: РЎРѕР·РґР°Р№ РјРѕС‰РЅСѓСЋ, СЌРјРѕС†РёРѕРЅР°Р»СЊРЅСѓСЋ Рё РјРѕС‚РёРІР°С†РёРѕРЅРЅСѓСЋ СЂРµС‡СЊ РґР»СЏ С‡РµР»РѕРІРµРєР°, РєРѕС‚РѕСЂС‹Р№ РІРµРґРµС‚ Р±РёС‚РІСѓ. 
+        РСЃРїРѕР»СЊР·СѓР№ РґР°РЅРЅС‹Рµ, РєРѕС‚РѕСЂС‹Рµ СЏ СѓРєР°Р¶Сѓ РІ РїР°СЂР°РјРµС‚СЂР°С…. РќРѕ РЅРµ РѕС‡РµРЅСЊ РґР»РёРЅРЅСѓСЋ СЂРµС‡СЊ.
+
+        Р’РѕС‚ РјРѕРё РїР°СЂР°РјРµС‚СЂС‹ Р±РёС‚РІС‹ СЃ Р·Р°РІРёСЃРёРјРѕСЃС‚СЊСЋ:
+        - Р—Р°РІРёСЃРёРјРѕСЃС‚СЊ: $addiction
+        - РљРѕР»РёС‡РµСЃС‚РІРѕ РґРЅРµР№: $currentStreak
+        - РњРѕР№ Р»СѓС‡С€РёР№ СЂРµР·СѓР»СЊС‚Р°С‚: $bestStreak
+        
+       
+        РЎС‚СЂСѓРєС‚СѓСЂР° РѕС‚РІРµС‚Р°:
+        РўРІРѕСЏ СЂРµС‡СЊ РґРѕР»Р¶РЅР° СЃРѕСЃС‚РѕСЏС‚СЊ РёР· С‚СЂРµС… С‡Р°СЃС‚РµР№, СЂР°Р·РґРµР»РµРЅРЅС‹С… СЌРјРѕРґР·Рё:
+
+        рџ›ЎпёЏ РџР РР—РќРђРќРР• Р‘РћР›Р Р РЎРўРђРўРЈРЎРђ:
+        РќР°С‡РЅРё СЃ РїСЂРёР·РЅР°РЅРёСЏ С‚РѕРіРѕ, РєР°РєРѕРіРѕ С‡РµСЂС‚Р° РјРЅРµ СЃРµР№С‡Р°СЃ С‚СЏР¶РµР»Рѕ. 
+        РћРїРёС€Рё РјРѕРµ С‚РµРєСѓС‰РµРµ СЃРѕСЃС‚РѕСЏРЅРёРµ (РѕРїРёСЂР°СЏСЃСЊ РЅР° В«РЎР»РѕР¶РЅРѕСЃС‚СЊ СЃРµРіРѕРґРЅСЏС€РЅРµРіРѕ РґРЅСЏВ»).
+        РЎРєР°Р¶Рё, РїРѕС‡РµРјСѓ $currentStreak вЂ” СЌС‚Рѕ РЅРµ РїСЂРѕСЃС‚Рѕ С†РёС„СЂР°, Р° СЂСѓР±РµР¶, РєРѕС‚РѕСЂС‹Р№ РјРµРЅСЏРµС‚ С…РёРјРёСЋ РјРѕР·РіР° Рё Р·Р°РєР°Р»СЏРµС‚ РґСѓС…. РўР°РєР¶Рµ СѓС‡РёС‚С‹РІР°Р№ РјРѕР№ Р»СѓС‡С€РёР№ СЂРµР·СѓР»СЊС‚Р°С‚ $bestStreak
+
+        рџ—ЎпёЏ РђР РЎР•РќРђР› РњРћР©Р (Р¦РёС‚Р°С‚С‹ Рё РћС‚СЃС‹Р»РєРё):
+        РџСЂРёРІРµРґРё РІРґРѕС…РЅРѕРІР»СЏСЋС‰РёРµ С†РёС‚Р°С‚С‹ РёР»Рё РѕС‚СЃС‹Р»РєРё, РєРѕС‚РѕСЂС‹Рµ РїРµСЂРµРєР»РёРєР°СЋС‚СЃСЏ СЃ РјРѕРµР№ СЃРёС‚СѓР°С†РёРµР№.
+        РСЃРїРѕР»СЊР·СѓР№ СЃС†РµРЅС‹ РёР· С„РёР»СЊРјРѕРІ, РёРіСЂ Рё РїСЃР°Р»РјРѕРІ. 
+        РћР±СЏР·Р°С‚РµР»СЊРЅРѕ Р°РґР°РїС‚РёСЂСѓР№ СЃРјС‹СЃР» С†РёС‚Р°С‚С‹ Рє Р±РѕСЂСЊР±Рµ СЃ Р·Р°РІРёСЃРёРјРѕСЃС‚СЊСЋ.
+
+        вљ”пёЏ РџР РРљРђР— Рљ Р”Р•Р™РЎРўР’РР®:
+        Р—Р°РІРµСЂС€Рё РєРѕСЂРѕС‚РєРёРј, СЂСѓР±СЏС‰РёРј РїСЂРёРєР°Р·РѕРј. 
+        Р”Р°Р№ РєРѕРЅРєСЂРµС‚РЅС‹Р№ СЃРѕРІРµС‚ РЅР° Р±Р»РёР¶Р°Р№С€РёР№ С‡Р°СЃ.
+    """.trimIndent()
     }
 
 }
@@ -2242,16 +2495,19 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
-import androidx.work.OneTimeWorkRequest
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
+import com.example.unchain.data.remote.ContentRequestDto
+import com.example.unchain.data.remote.GeminiApiService
+import com.example.unchain.data.remote.GeminiRequestDto
+import com.example.unchain.data.remote.PartRequestDto
 import com.example.unchain.databinding.ActivityMainBinding
-import com.example.unchain.di.MainComponent
+import com.example.unchain.domain.models.gemini.ContentRequest
+import com.example.unchain.domain.models.gemini.GeminiRequest
+import com.example.unchain.domain.models.gemini.PartRequest
+import com.example.unchain.domain.usecases.GetGeminiResponseUseCase
 import com.example.unchain.domain.usecases.InitDbUseCase
-import com.example.unchain.domain.worker.TestWorker
 import com.example.unchain.presentation.allAddictionsScreen.fragment.AllAddictionsFragment
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
 import javax.inject.Inject
 
 class MainActivity : AppCompatActivity() {
@@ -2259,6 +2515,8 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
 
+    @Inject
+    lateinit var getGeminiResponse : GetGeminiResponseUseCase
     @Inject
     lateinit var initDbUseCase: InitDbUseCase
 
@@ -2286,7 +2544,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         lifecycleScope.launch {
-            //РґР»СЏ С‚РµСЃС‚РѕРІ
             initDbUseCase.execute()
         }
 

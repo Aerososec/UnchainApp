@@ -9,7 +9,7 @@ data class GeminiResponseDto(val candidates : List<CandidatesDto>? = null)
 data class CandidatesDto(val content : ContentResponseDto)
 
 @Serializable
-data class ContentResponseDto(val parts : List<PartResponseDto>)
+data class ContentResponseDto(val parts : List<PartResponseDto>, val role : String)
 
 @Serializable
 data class PartResponseDto(val text : String?)

@@ -9,6 +9,6 @@ data class MessageDbModel(
     @PrimaryKey(autoGenerate = true)
     val id : Int = 0,
     val text : String,
-    val role : MessageRole,
+    val role : String,
     val addictionId : Int
 )

@@ -18,11 +18,11 @@ class GeminiRequestMapper @Inject constructor() {
     }
 
     private fun dtoToEntityContent(contentRequestDto: ContentRequestDto) : ContentRequest{
-        return ContentRequest(contentRequestDto.parts.map { dtoToEntityPart(it) })
+        return ContentRequest(contentRequestDto.role, contentRequestDto.parts.map { dtoToEntityPart(it) })
     }
 
     private fun entityToDtoContent(contentRequest: ContentRequest) : ContentRequestDto{
-        return ContentRequestDto(contentRequest.parts.map { entityToDtoPart(it) })
+        return ContentRequestDto(contentRequest.role, contentRequest.parts.map { entityToDtoPart(it) })
     }
 
     fun entityToDtoRequest(geminiRequest: GeminiRequest) : GeminiRequestDto{

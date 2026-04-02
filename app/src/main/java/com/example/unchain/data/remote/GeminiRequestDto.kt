@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 data class GeminiRequestDto(val contents: List<ContentRequestDto>)
 
 @Serializable
-data class ContentRequestDto(val parts: List<PartRequestDto>)
+data class ContentRequestDto(val role : String, val parts: List<PartRequestDto>)
 
 @Serializable
 data class PartRequestDto(val text: String)

@@ -1,5 +1,6 @@
 package com.example.unchain.data.repository
 
+import android.util.Log
 import com.example.unchain.data.db.MessageDao
 import com.example.unchain.data.models.MessageMapper
 import com.example.unchain.domain.models.gemini.ContentRequest
@@ -20,20 +21,44 @@ class MessageRepositoryImpl @Inject constructor(
     private val messageMapper: MessageMapper,
     private val geminiRepository: GeminiRepository
 ) : MessageRepository {
-    override suspend fun sendMessage(message: Message): GeminiResponse {
+    override suspend fun sendMessage(message: Message): List<GeminiResponse> {
         insertMessage(message)
         return try {
             val chatHistory = getChatForAddiction(message.addictionId).firstOrNull() ?: emptyList()
             val request = makeRequest(chatHistory)
-            val geminiAnswer = geminiRepository.getGeminiResponse(request)
-            val text = geminiAnswer.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text
-            text?.let {
-                val answerMessage = makeMessage(it.toString(), message.addictionId)
+            val geminiAnswer = geminiRepository.getGeminiResponseStream(request)
+            val text =  geminiAnswer.joinToString("") { response ->
+                response.candidates
+                    ?.firstOrNull()
+                    ?.content
+                    ?.parts
+                    ?.firstOrNull()
+                    ?.text
+                    ?: ""
+            }
+            if (text.isNotBlank()) {
+                val answerMessage = makeMessage(text, message.addictionId)
                 insertMessage(answerMessage)
             }
             geminiAnswer
         }
         catch (e : Exception){
+            when (e) {
+
+                is retrofit2.HttpException -> {
+                    val errorBody = e.response()?.errorBody()?.string()
+                    Log.e("GEMINI_HTTP", "Code: ${e.code()}")
+                    Log.e("GEMINI_HTTP", "ErrorBody: $errorBody")
+                }
+
+                is java.io.IOException -> {
+                    Log.e("GEMINI_NETWORK", "Network error: ${e.message}")
+                }
+
+                else -> {
+                    Log.e("GEMINI_UNKNOWN", "Unknown error", e)
+                }
+            }
             throw e
         }
     }

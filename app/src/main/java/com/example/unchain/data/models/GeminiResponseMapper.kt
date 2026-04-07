@@ -12,6 +12,10 @@ import javax.inject.Inject
 
 class GeminiResponseMapper @Inject constructor() {
 
+    fun dtoToEntityList(dto: List<GeminiResponseDto>): List<GeminiResponse> {
+        return dto.map { dtoToEntity(it) }
+    }
+
     fun dtoToEntity(dto: GeminiResponseDto): GeminiResponse {
         return GeminiResponse(
             candidates = dto.candidates?.map { dtoToEntityCandidate(it) }

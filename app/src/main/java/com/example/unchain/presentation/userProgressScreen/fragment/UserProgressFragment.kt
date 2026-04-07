@@ -115,9 +115,6 @@ class UserProgressFragment : Fragment() {
             }
         }
 
-
-
-
         binding.successfulDayButton.setOnClickListener {
             userProgressInfo?.let {
                 progressViewModel.markDaySuccess(it, addictionId)

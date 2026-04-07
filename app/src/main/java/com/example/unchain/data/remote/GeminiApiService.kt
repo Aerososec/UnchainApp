@@ -7,9 +7,16 @@ import retrofit2.http.Path
 
 interface GeminiApiService {
     @POST("v1beta/models/{model}:generateContent")
-    suspend fun getGeminiResponse(
+    suspend fun getGeminiResponseContent(
         @Path("model") model : String,
         @Header("x-goog-api-key") apiKey : String,
         @Body geminiRequest: GeminiRequestDto
     ) : GeminiResponseDto
+
+    @POST("v1beta/models/{model}:streamGenerateContent")
+    suspend fun getGeminiResponseStream(
+        @Path("model") model : String,
+        @Header("x-goog-api-key") apiKey : String,
+        @Body geminiRequest: GeminiRequestDto
+    ) : List<GeminiResponseDto>
 }

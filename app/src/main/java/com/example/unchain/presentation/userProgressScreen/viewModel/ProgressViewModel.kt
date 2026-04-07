@@ -20,6 +20,7 @@ import com.example.unchain.domain.usecases.StartAddictionUseCase
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
@@ -38,7 +39,7 @@ class ProgressViewModel @Inject constructor(
 
 
     private val _motivationFlow = MutableStateFlow<GeminiResponse?>(null)
-    val motivationFlow = _motivationFlow
+    val motivationFlow = _motivationFlow.asStateFlow()
 
     val addictionId = MutableStateFlow<Int>(-1)
 
@@ -103,7 +104,7 @@ class ProgressViewModel @Inject constructor(
 
     private fun createMotivationGeminiRequest(text: String): GeminiRequest {
         val partRequest = PartRequest(text)
-        val contentRequest = ContentRequest(listOf(partRequest))
+        val contentRequest = ContentRequest(parts = listOf(partRequest))
         val geminiRequest = GeminiRequest(listOf(contentRequest))
         return geminiRequest
     }

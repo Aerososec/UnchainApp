@@ -13,14 +13,18 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.unchain.UnchainApp
 import com.example.unchain.databinding.FragmentUserProgressBinding
 import com.example.unchain.domain.models.UserProgress
 import com.example.unchain.domain.utils.formattingDate
 import com.example.unchain.domain.utils.formattingStreak
+import com.example.unchain.presentation.userProgressScreen.recyclerView.GeminiChatAdapter
+import com.example.unchain.presentation.userProgressScreen.viewModel.MessageViewModel
 import com.example.unchain.presentation.userProgressScreen.viewModel.ProgressViewModel
 import com.example.unchain.presentation.widget.MyWidgetProvider
 import com.example.unchain.presentation.widget.WidgetConfigActivity
@@ -33,7 +37,9 @@ class UserProgressFragment : Fragment() {
     lateinit var viewModelFactory: ViewModelProvider.Factory
     private lateinit var binding: FragmentUserProgressBinding
     private lateinit var progressViewModel: ProgressViewModel
+    private lateinit var messageViewModel: MessageViewModel
 
+    private lateinit var geminiChatAdapter : GeminiChatAdapter
     private var userProgressInfo: UserProgress? = null
     private var addictionId = UNKNOWN_ID
     private var addictionName = UNKNOWN_NAME
@@ -41,6 +47,7 @@ class UserProgressFragment : Fragment() {
     private var shouldShowTimePicker : Boolean = true
 
     private var widgetId : Int? = null
+
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -53,7 +60,14 @@ class UserProgressFragment : Fragment() {
             this,
             viewModelFactory
         )[ProgressViewModel::class.java]
+
+        messageViewModel = ViewModelProvider(
+            this,
+            viewModelFactory
+        )[MessageViewModel::class.java]
+
         parseArgs()
+        messageViewModel.getChat(addictionId)
     }
 
     override fun onCreateView(
@@ -67,6 +81,7 @@ class UserProgressFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        setUpRecyclerView()
 
         viewLifecycleOwner.lifecycleScope.launch {
             progressViewModel.loadProgress(addictionId)
@@ -93,6 +108,16 @@ class UserProgressFragment : Fragment() {
             }
         }
 
+        viewLifecycleOwner.lifecycleScope.launch {
+            messageViewModel.chatFlow.collect {
+                geminiChatAdapter.submitList(it)
+                binding.chatRecyclerView.scrollToPosition(it.lastIndex)
+            }
+        }
+
+
+
+
         binding.successfulDayButton.setOnClickListener {
             userProgressInfo?.let {
                 progressViewModel.markDaySuccess(it, addictionId)
@@ -109,6 +134,24 @@ class UserProgressFragment : Fragment() {
 
         binding.getMotivationButton.setOnClickListener {
             setGeminiResponse()
+        }
+
+        binding.motivationModeButton.setOnClickListener {
+            binding.motivationLayout.visibility = View.VISIBLE
+            binding.chatLayout.visibility = View.GONE
+        }
+
+        binding.chatModeButton.setOnClickListener {
+            binding.motivationLayout.visibility = View.GONE
+            binding.chatLayout.visibility = View.VISIBLE
+        }
+
+        binding.sendMessageButton.setOnClickListener {
+            val text = binding.messageEditText.text.toString()
+            if (text.isNotBlank()) {
+                messageViewModel.sendMessage(text, addictionId)
+                binding.messageEditText.text.clear()
+            }
         }
 
     }
@@ -171,6 +214,16 @@ class UserProgressFragment : Fragment() {
             binding.currencyAmountTextView.text = userProgress.currency.toString()
             binding.startDateTextView.text = userProgress.startDate.formattingDate()
         }
+    }
+
+    private fun setUpRecyclerView(){
+        geminiChatAdapter = GeminiChatAdapter()
+
+        binding.chatRecyclerView.apply {
+            layoutManager = LinearLayoutManager(context)
+            adapter = geminiChatAdapter
+        }
+
     }
 
 

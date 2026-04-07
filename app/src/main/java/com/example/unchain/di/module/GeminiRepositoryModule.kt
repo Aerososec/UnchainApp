@@ -6,7 +6,7 @@ import dagger.Binds
 import dagger.Module
 
 @Module
-interface GeminiRepositoryModel {
+interface GeminiRepositoryModule {
     @Binds
     fun bindGeminiRepository(geminiRepositoryImpl: GeminiRepositoryImpl) : GeminiRepository
 }

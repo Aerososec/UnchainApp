@@ -13,8 +13,6 @@
         android:orientation="vertical">
 
 
-
-        <!-- Заголовок -->
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -62,7 +60,7 @@
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
-        <!-- Дата начала -->
+
         <TextView
             android:id="@+id/startDateTextView"
             android:layout_width="wrap_content"
@@ -72,7 +70,7 @@
             android:textColor="#666666"
             android:paddingBottom="24dp" />
 
-        <!-- Рекорды -->
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -151,7 +149,7 @@
 
         </LinearLayout>
 
-        <!-- Кнопки -->
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -186,69 +184,142 @@
 
         </LinearLayout>
 
+        <LinearLayout
+            android:id="@+id/modeSwitcherLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="40dp"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/motivationModeButton"
+                android:layout_width="0dp"
+                android:layout_height="50dp"
+                android:layout_weight="1"
+                android:text="Мотивация"
+                android:textAllCaps="false"
+                app:cornerRadius="12dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/chatModeButton"
+                android:layout_width="0dp"
+                android:layout_height="50dp"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:text="Чат психолог"
+                android:textAllCaps="false"
+                app:cornerRadius="12dp" />
+
+        </LinearLayout>
+
         <ProgressBar
             android:id="@+id/progressBar"
             style="?android:attr/progressBarStyle"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:visibility="invisible"/>
+            android:layout_height="5dp"
+            android:visibility="invisible" />
 
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/motivationCard"
+        <FrameLayout
+            android:id="@+id/contentContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="4dp"
-            android:padding="16dp">
+            android:layout_marginTop="24dp">
 
-            <LinearLayout
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/motivationLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical">
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp"
+                android:padding="16dp">
 
-                <TextView
-                    android:id="@+id/motivationTitleTextView"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:layout_marginBottom="12dp"
-                    android:text="Мотивация"
-                    android:textColor="@android:color/black"
-                    android:textSize="20sp"
-                    android:textStyle="bold" />
-
-                <androidx.core.widget.NestedScrollView
+                <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="200dp"
-                    android:fillViewport="true">
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
 
                     <TextView
-                        android:id="@+id/motivationMessageTextView"
+                        android:id="@+id/motivationTitleTextView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:layout_marginBottom="12dp"
+                        android:text="Мотивация"
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
+
+                    <androidx.core.widget.NestedScrollView
+                        android:layout_width="match_parent"
+                        android:layout_height="200dp"
+                        android:fillViewport="true">
+
+                        <TextView
+                            android:id="@+id/motivationMessageTextView"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:padding="5dp"
+                            android:text="Если тебе тяжело держаться..."
+                            android:textSize="16sp" />
+
+                    </androidx.core.widget.NestedScrollView>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/getMotivationButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:text="Получить мотивацию" />
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/chatLayout"
+                android:layout_width="match_parent"
+                android:layout_height="400dp"
+                android:visibility="gone"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical">
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/chatRecyclerView"
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:layout_weight="1"/>
+
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:gravity="center"
-                        android:padding="5dp"
-                        android:text="Если тебе тяжело держаться, нажми на кнопку и получи заряд мотивации"
-                        android:textColor="#444444"
-                        android:textSize="16sp" />
+                        android:orientation="horizontal"
+                        android:padding="8dp">
 
-                </androidx.core.widget.NestedScrollView>
+                        <EditText
+                            android:id="@+id/messageEditText"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:hint="Напиши сообщение..." />
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/getMotivationButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:text="Получить мотивацию"
-                    android:textAllCaps="false"
-                    android:textColor="@android:color/white"
-                    android:textSize="16sp"
-                    app:backgroundTint="@color/pigment_blue"
-                    app:cornerRadius="16dp" />
+                        <ImageButton
+                            android:id="@+id/sendMessageButton"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:src="@android:drawable/ic_menu_send"/>
 
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+        </FrameLayout>
 
     </LinearLayout>
 </ScrollView>

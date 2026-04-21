@@ -1,10 +1,11 @@
-package com.example.unchain.data.models
+package com.example.unchain.data.models.mapper
 
+import com.example.unchain.data.models.dbModels.MessageDbModel
 import com.example.unchain.domain.models.gemini.Message
 import javax.inject.Inject
 
 class MessageMapper @Inject constructor(){
-    fun entityToDbModel(message: Message) : MessageDbModel{
+    fun entityToDbModel(message: Message) : MessageDbModel {
         return MessageDbModel(
             message.id,
             message.text,
@@ -13,7 +14,7 @@ class MessageMapper @Inject constructor(){
         )
     }
 
-    fun dbModelToEntity(message: MessageDbModel) : Message{
+    fun dbModelToEntity(message: MessageDbModel) : Message {
         return Message(
             message.id,
             message.text,

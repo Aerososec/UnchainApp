@@ -1,4 +1,4 @@
-package com.example.unchain.data.models
+package com.example.unchain.data.models.dbModels
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

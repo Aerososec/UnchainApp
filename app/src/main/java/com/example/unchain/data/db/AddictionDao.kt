@@ -4,9 +4,8 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import com.example.unchain.data.models.AddictionDbModel
-import com.example.unchain.data.models.AddictionWithProgressDbModel
-import com.example.unchain.domain.models.Addiction
+import com.example.unchain.data.models.dbModels.AddictionDbModel
+import com.example.unchain.data.models.dbModels.AddictionWithProgressDbModel
 import kotlinx.coroutines.flow.Flow
 
 

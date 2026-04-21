@@ -1,5 +1,9 @@
-package com.example.unchain.data.models
+package com.example.unchain.data.models.mapper
 
+import com.example.unchain.data.models.dbModels.AddictionDbModel
+import com.example.unchain.data.models.dbModels.AddictionInWidgetDbModel
+import com.example.unchain.data.models.dbModels.AddictionWithProgressDbModel
+import com.example.unchain.data.models.dbModels.UserProgressDbModel
 import com.example.unchain.domain.models.Addiction
 import com.example.unchain.domain.models.AddictionInWidget
 import com.example.unchain.domain.models.AddictionWithProgress
@@ -8,7 +12,7 @@ import javax.inject.Inject
 
 class Mapper @Inject constructor() {
 
-    fun entityToDbModelAddiction(addiction: Addiction) : AddictionDbModel{
+    fun entityToDbModelAddiction(addiction: Addiction) : AddictionDbModel {
         return AddictionDbModel(
             addiction.id,
             addiction.name,
@@ -16,7 +20,7 @@ class Mapper @Inject constructor() {
         )
     }
 
-    fun dbModelToEntityAddictionWithProgress(addictionDb: AddictionWithProgressDbModel) : AddictionWithProgress{
+    fun dbModelToEntityAddictionWithProgress(addictionDb: AddictionWithProgressDbModel) : AddictionWithProgress {
         return AddictionWithProgress(
             addictionDb.id,
             addictionDb.name,
@@ -25,7 +29,7 @@ class Mapper @Inject constructor() {
         )
     }
 
-    fun dbModelToEntityAddiction(addiction: AddictionDbModel) : Addiction{
+    fun dbModelToEntityAddiction(addiction: AddictionDbModel) : Addiction {
         return Addiction(
             addiction.id,
             addiction.name,
@@ -46,7 +50,7 @@ class Mapper @Inject constructor() {
         dbModelToEntityAddictionWithProgress(it)
     }
 
-    fun entityToDbModelUserProgress(userProgress: UserProgress) : UserProgressDbModel{
+    fun entityToDbModelUserProgress(userProgress: UserProgress) : UserProgressDbModel {
         return UserProgressDbModel(
             userProgress.addictionId,
             userProgress.startDate,
@@ -60,7 +64,7 @@ class Mapper @Inject constructor() {
         )
     }
 
-    fun dbModelToEntityUserProgress(userProgressDb: UserProgressDbModel) : UserProgress{
+    fun dbModelToEntityUserProgress(userProgressDb: UserProgressDbModel) : UserProgress {
         return UserProgress(
             userProgressDb.addictionId,
             userProgressDb.startDate,
@@ -74,14 +78,14 @@ class Mapper @Inject constructor() {
         )
     }
 
-    fun dbModelToEntityAddictionInWidget(addictionInWidgetDbModel: AddictionInWidgetDbModel) : AddictionInWidget{
+    fun dbModelToEntityAddictionInWidget(addictionInWidgetDbModel: AddictionInWidgetDbModel) : AddictionInWidget {
         return AddictionInWidget(
             addictionInWidgetDbModel.widgetId,
             addictionInWidgetDbModel.addictionId
         )
     }
 
-    fun entityToDbModelAddictionInWidget(addictionInWidget: AddictionInWidget) : AddictionInWidgetDbModel{
+    fun entityToDbModelAddictionInWidget(addictionInWidget: AddictionInWidget) : AddictionInWidgetDbModel {
         return AddictionInWidgetDbModel(
             addictionInWidget.widgetId,
             addictionInWidget.addictionId

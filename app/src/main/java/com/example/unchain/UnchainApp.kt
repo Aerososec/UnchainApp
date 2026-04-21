@@ -3,7 +3,7 @@ package com.example.unchain
 import android.app.Application
 import androidx.work.Configuration
 import com.example.unchain.data.db.AppDataBase
-import com.example.unchain.data.models.Mapper
+import com.example.unchain.data.models.mapper.Mapper
 import com.example.unchain.di.DaggerMainComponent
 import com.example.unchain.di.MainComponent
 import com.example.unchain.domain.usecases.InitDbUseCase

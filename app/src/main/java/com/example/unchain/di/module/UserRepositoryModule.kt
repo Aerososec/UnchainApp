@@ -7,7 +7,6 @@ import dagger.Module
 
 @Module
 interface UserRepositoryModule {
-
     @Binds
     fun getUserRepository(userRepositoryImpl: UserRepositoryImpl) : UserRepository
 }

@@ -1,8 +1,7 @@
-package com.example.unchain.data.models
+package com.example.unchain.data.models.dbModels
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import com.example.unchain.domain.models.gemini.MessageRole
 
 @Entity(tableName = "gemini_chat")
 data class MessageDbModel(

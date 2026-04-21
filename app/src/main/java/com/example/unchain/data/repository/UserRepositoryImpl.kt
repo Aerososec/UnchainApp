@@ -4,7 +4,7 @@ import android.appwidget.AppWidgetManager
 import android.content.Intent
 import com.example.unchain.data.db.AddictionDao
 import com.example.unchain.data.db.UserProgressDao
-import com.example.unchain.data.models.Mapper
+import com.example.unchain.data.models.mapper.Mapper
 import com.example.unchain.domain.models.Addiction
 import com.example.unchain.domain.models.AddictionWithProgress
 import com.example.unchain.domain.models.UserProgress

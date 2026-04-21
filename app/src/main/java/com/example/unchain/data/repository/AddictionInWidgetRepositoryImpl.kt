@@ -1,7 +1,7 @@
 package com.example.unchain.data.repository
 
 import com.example.unchain.data.db.AddictionInWidgetDao
-import com.example.unchain.data.models.Mapper
+import com.example.unchain.data.models.mapper.Mapper
 import com.example.unchain.domain.models.Addiction
 import com.example.unchain.domain.models.AddictionInWidget
 import com.example.unchain.domain.models.AddictionWithProgress

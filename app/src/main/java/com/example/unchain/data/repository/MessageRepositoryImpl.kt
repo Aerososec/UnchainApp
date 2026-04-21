@@ -2,7 +2,7 @@ package com.example.unchain.data.repository
 
 import android.util.Log
 import com.example.unchain.data.db.MessageDao
-import com.example.unchain.data.models.MessageMapper
+import com.example.unchain.data.models.mapper.MessageMapper
 import com.example.unchain.domain.models.gemini.ContentRequest
 import com.example.unchain.domain.models.gemini.GeminiRequest
 import com.example.unchain.domain.models.gemini.GeminiResponse

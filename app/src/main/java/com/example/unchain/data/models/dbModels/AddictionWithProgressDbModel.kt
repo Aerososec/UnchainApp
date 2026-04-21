@@ -1,6 +1,4 @@
-package com.example.unchain.data.models
-
-import androidx.room.Entity
+package com.example.unchain.data.models.dbModels
 
 data class AddictionWithProgressDbModel(
     val id: Int,

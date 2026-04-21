@@ -3,7 +3,7 @@ package com.example.unchain.data.db
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
-import com.example.unchain.data.models.MessageDbModel
+import com.example.unchain.data.models.dbModels.MessageDbModel
 import kotlinx.coroutines.flow.Flow
 
 @Dao

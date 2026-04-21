@@ -1,4 +1,4 @@
-package com.example.unchain.data.models
+package com.example.unchain.data.models.mapper
 
 import com.example.unchain.data.remote.CandidatesDto
 import com.example.unchain.data.remote.ContentResponseDto

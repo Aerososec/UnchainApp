@@ -2,11 +2,10 @@ package com.example.unchain.data.db
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
-import com.example.unchain.data.models.AddictionDbModel
-import com.example.unchain.data.models.AddictionInWidgetDbModel
-import com.example.unchain.data.models.AddictionWithProgressDbModel
-import com.example.unchain.data.models.MessageDbModel
-import com.example.unchain.data.models.UserProgressDbModel
+import com.example.unchain.data.models.dbModels.AddictionDbModel
+import com.example.unchain.data.models.dbModels.AddictionInWidgetDbModel
+import com.example.unchain.data.models.dbModels.MessageDbModel
+import com.example.unchain.data.models.dbModels.UserProgressDbModel
 
 @Database(
     entities = [

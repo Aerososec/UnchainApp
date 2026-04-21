@@ -1,8 +1,8 @@
 package com.example.unchain.data.repository
 
 import com.example.unchain.BuildConfig
-import com.example.unchain.data.models.GeminiRequestMapper
-import com.example.unchain.data.models.GeminiResponseMapper
+import com.example.unchain.data.models.mapper.GeminiRequestMapper
+import com.example.unchain.data.models.mapper.GeminiResponseMapper
 import com.example.unchain.data.remote.GeminiApiService
 import com.example.unchain.domain.models.gemini.GeminiRequest
 import com.example.unchain.domain.models.gemini.GeminiResponse

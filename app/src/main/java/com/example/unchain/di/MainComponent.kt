@@ -9,6 +9,7 @@ import com.example.unchain.di.module.DataBaseModule
 import com.example.unchain.di.module.GeminiApiModule
 import com.example.unchain.di.module.GeminiRepositoryModule
 import com.example.unchain.di.module.MessageRepositoryModule
+import com.example.unchain.di.module.PersonalizationRepositoryModule
 import com.example.unchain.di.module.TimeProviderModule
 import com.example.unchain.di.module.UserRepositoryModule
 import com.example.unchain.di.module.ViewModelModule
@@ -31,7 +32,8 @@ import dagger.Component
         AddictionInWidgetModule::class,
         GeminiApiModule::class,
         GeminiRepositoryModule::class,
-        MessageRepositoryModule::class
+        MessageRepositoryModule::class,
+        PersonalizationRepositoryModule::class
     ]
 )
 interface MainComponent {

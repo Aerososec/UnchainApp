@@ -33,7 +33,7 @@ class PersonalityMapper @Inject constructor() {
         return personalityList.map { entityToDbModel(it) }
     }
 
-    fun bbModelToEntityList(personalityList : List<PersonalityDbModel>) : List<Personality>{
+    fun dbModelToEntityList(personalityList : List<PersonalityDbModel>) : List<Personality>{
         return personalityList.map { dbModelToEntity(it) }
     }
 }

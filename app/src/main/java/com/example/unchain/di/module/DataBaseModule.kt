@@ -7,6 +7,7 @@ import com.example.unchain.data.db.AddictionDao
 import com.example.unchain.data.db.AddictionInWidgetDao
 import com.example.unchain.data.db.AppDataBase
 import com.example.unchain.data.db.MessageDao
+import com.example.unchain.data.db.PersonalizationDao
 import com.example.unchain.data.db.UserProgressDao
 import com.example.unchain.di.annotation.ApplicationSingleton
 import dagger.Module
@@ -46,6 +47,11 @@ class DataBaseModule {
     @Provides
     fun provideMessageDao(db : AppDataBase) : MessageDao{
         return db.messageDao()
+    }
+
+    @Provides
+    fun providePersonalizationDao(db : AppDataBase) : PersonalizationDao{
+        return db.personalizationDao()
     }
 
     companion object{

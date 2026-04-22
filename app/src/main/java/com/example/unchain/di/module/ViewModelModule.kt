@@ -1,10 +1,12 @@
 package com.example.unchain.di.module
 
+import android.view.View
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.unchain.di.ViewModelFactory
 import com.example.unchain.di.annotation.ViewModelKey
 import com.example.unchain.presentation.allAddictionsScreen.viewModel.AllAddictionsViewModel
+import com.example.unchain.presentation.shopScreen.viewModel.ShopViewModel
 import com.example.unchain.presentation.userProgressScreen.viewModel.MessageViewModel
 import com.example.unchain.presentation.userProgressScreen.viewModel.ProgressViewModel
 import dagger.Binds
@@ -31,4 +33,9 @@ interface ViewModelModule {
     @IntoMap
     @ViewModelKey(MessageViewModel::class)
     fun bindMessageViewModel(messageViewModel: MessageViewModel) : ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(ShopViewModel::class)
+    fun bindShopViewModel(shopViewModel: ShopViewModel) : ViewModel
 }

@@ -37,4 +37,12 @@ class PersonalizationRepositoryImpl @Inject constructor(
             addictionWithPersonalityMapper.entityToDbModel(addictionWithPersonality)
         )
     }
+
+    override suspend fun getPersonalityById(personalityId: Int): Personality {
+        return personalityMapper.dbModelToEntity(personalizationDao.getPersonalityById(personalityId))
+    }
+
+    override suspend fun updatePersonality(personality: Personality) {
+        personalizationDao.updatePersonality(personalityMapper.entityToDbModel(personality))
+    }
 }

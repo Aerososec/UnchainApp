@@ -1,13 +1,18 @@
 package com.example.unchain.presentation.shopScreen.recyclerView
 
+import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.unchain.databinding.ItemPersonalityBinding
 import com.example.unchain.domain.models.personalization.Personality
+import com.example.unchain.domain.models.personalization.PersonalityState
 
 class ShopAdapter : ListAdapter<Personality, ShopAdapter.ShopItemViewHolder>(ShopDiffUtil()){
+
+    var itemClick : ((Personality) -> Unit)? = null
+
     override fun onCreateViewHolder(
         parent: ViewGroup,
         viewType: Int
@@ -28,12 +33,31 @@ class ShopAdapter : ListAdapter<Personality, ShopAdapter.ShopItemViewHolder>(Sho
         holder.onBind(getItem(position))
     }
 
-    class ShopItemViewHolder(val binding : ItemPersonalityBinding) : RecyclerView.ViewHolder(binding.root){
+    inner class ShopItemViewHolder(val binding : ItemPersonalityBinding) : RecyclerView.ViewHolder(binding.root){
 
         fun onBind(item : Personality){
             binding.tvName.text = item.name
             binding.tvDescription.text = item.description
             binding.tvPrice.text = item.price.toString() + " coins"
+
+            binding.btnAction.setOnClickListener {
+                itemClick?.invoke(item)
+            }
+
+            when(item.state){
+                PersonalityState.LOCKED.state -> {
+                    binding.personalityBackround.setBackgroundColor(Color.RED)
+                    binding.btnAction.text = "Купить"
+                }
+                PersonalityState.UNLOCKED_SELECTED.state -> {
+                    binding.personalityBackround.setBackgroundColor(Color.WHITE)
+                    binding.btnAction.text = "Выбрано"
+                }
+                PersonalityState.UNLOCKED_NOT_SELECTED.state -> {
+                    binding.personalityBackround.setBackgroundColor(Color.GRAY)
+                    binding.btnAction.text = "Выбрать"
+                }
+            }
         }
     }
 }

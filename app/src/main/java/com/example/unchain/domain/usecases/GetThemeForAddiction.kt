@@ -8,8 +8,8 @@ class GetThemeForAddiction @Inject constructor(
     private val personalityRepository: PersonalizationRepository
 ) {
     suspend operator fun invoke(addictionId : Int) : Theme{
-        val personalityId = personalityRepository.getPersonalityIdByAddictionId(addictionId)
-        val themeId = personalityRepository.getThemeIdByPersonalityId(personalityId)
+        val personalityId = personalityRepository.getPersonalityIdByAddictionId(addictionId) ?: throw Exception()
+        val themeId = personalityRepository.getThemeIdByPersonalityId(personalityId) ?: throw Exception()
         return personalityRepository.getTheme(themeId)
     }
 }

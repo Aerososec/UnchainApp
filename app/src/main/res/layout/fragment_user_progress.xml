@@ -41,6 +41,15 @@
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent">
 
+                <ImageButton
+                    android:id="@+id/shopButton"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_marginEnd="8dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Shop"
+                    android:src="@drawable/ic_shop" />
+
                 <ImageView
                     android:id="@+id/currencyIcon"
                     android:layout_width="24dp"
@@ -56,6 +65,7 @@
                     android:textSize="18sp"
                     android:textColor="@android:color/black"
                     android:layout_marginStart="8dp" />
+
             </LinearLayout>
 
         </androidx.constraintlayout.widget.ConstraintLayout>

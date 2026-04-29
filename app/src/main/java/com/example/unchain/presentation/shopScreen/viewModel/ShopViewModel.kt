@@ -20,15 +20,11 @@ class ShopViewModel @Inject constructor(
     val personalities : StateFlow<List<Personality>>
         get() = _personalities
 
-    fun getAllPersonalities(){
-        viewModelScope.launch {
-            _personalities.value = getAllPersonalitiesUseCase()
-        }
+    suspend fun getAllPersonalities(){
+        _personalities.value = getAllPersonalitiesUseCase()
     }
 
-    fun selectPersonality(awp : AddictionWithPersonality){
-        viewModelScope.launch {
-            selectPersonalityUseCase(awp)
-        }
+    suspend fun selectPersonality(awp : AddictionWithPersonality){
+        selectPersonalityUseCase(awp)
     }
 }

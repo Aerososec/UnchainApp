@@ -7,5 +7,5 @@ data class Personality(
     val price : Int,
     val promptModifier : String,
     val themeId : Int,
-    val isUnlocked : Boolean = false
+    val state : String = PersonalityState.LOCKED.state
 )

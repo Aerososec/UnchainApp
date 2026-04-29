@@ -20,11 +20,11 @@ class PersonalizationRepositoryImpl @Inject constructor(
         return personalityMapper.dbModelToEntityList(personalizationDao.getAllPersonalities())
     }
 
-    override suspend fun getPersonalityIdByAddictionId(addictionId: Int): Int {
+    override suspend fun getPersonalityIdByAddictionId(addictionId: Int): Int? {
         return personalizationDao.getPersonalityIdByAddictionId(addictionId)
     }
 
-    override suspend fun getThemeIdByPersonalityId(personalityId: Int): Int {
+    override suspend fun getThemeIdByPersonalityId(personalityId: Int): Int? {
         return personalizationDao.getThemeIdByPersonalityId(personalityId)
     }
 

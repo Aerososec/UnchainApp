@@ -15,6 +15,7 @@ import com.example.unchain.di.module.UserRepositoryModule
 import com.example.unchain.di.module.ViewModelModule
 import com.example.unchain.di.module.WorkerModule
 import com.example.unchain.presentation.allAddictionsScreen.fragment.AllAddictionsFragment
+import com.example.unchain.presentation.shopScreen.fragment.ShopFragment
 import com.example.unchain.presentation.userProgressScreen.fragment.UserProgressFragment
 import com.example.unchain.presentation.widget.MyWidgetProvider
 import com.example.unchain.presentation.widget.WidgetConfigActivity
@@ -40,6 +41,7 @@ interface MainComponent {
 
     fun inject(userProgressFragment: UserProgressFragment)
     fun inject(allAddictionsFragment: AllAddictionsFragment)
+    fun inject(shopFragment: ShopFragment)
     fun inject(application: UnchainApp)
     fun inject(activity: MainActivity)
     fun inject(activity: WidgetConfigActivity)

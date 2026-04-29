@@ -18,11 +18,13 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.unchain.R
 import com.example.unchain.UnchainApp
 import com.example.unchain.databinding.FragmentUserProgressBinding
 import com.example.unchain.domain.models.UserProgress
 import com.example.unchain.domain.utils.formattingDate
 import com.example.unchain.domain.utils.formattingStreak
+import com.example.unchain.presentation.shopScreen.fragment.ShopFragment
 import com.example.unchain.presentation.userProgressScreen.recyclerView.GeminiChatAdapter
 import com.example.unchain.presentation.userProgressScreen.viewModel.MessageViewModel
 import com.example.unchain.presentation.userProgressScreen.viewModel.ProgressViewModel
@@ -151,6 +153,19 @@ class UserProgressFragment : Fragment() {
             }
         }
 
+        binding.shopButton.setOnClickListener {
+            openShopFragment(addictionId)
+        }
+
+    }
+
+    private fun openShopFragment(addictionId: Int){
+        val fragment = ShopFragment.newInstance(addictionId)
+
+        parentFragmentManager.beginTransaction()
+            .replace(R.id.fragmentContainer, fragment)
+            .addToBackStack(null)
+            .commit()
     }
 
     private fun setGeminiResponse(){

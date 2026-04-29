@@ -12,5 +12,5 @@ data class PersonalityDbModel(
     val price : Int,
     val promptModifier : String,
     val themeId : Int,
-    val isUnlocked : Boolean
+    val state : String
 )

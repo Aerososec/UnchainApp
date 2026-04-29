@@ -13,7 +13,7 @@ class PersonalityMapper @Inject constructor() {
             personality.price,
             personality.promptModifier,
             personality.themeId,
-            personality.isUnlocked
+            personality.state
         )
     }
 
@@ -25,7 +25,7 @@ class PersonalityMapper @Inject constructor() {
             personality.price,
             personality.promptModifier,
             personality.themeId,
-            personality.isUnlocked
+            personality.state
         )
     }
 

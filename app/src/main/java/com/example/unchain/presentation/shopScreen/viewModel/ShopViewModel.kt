@@ -8,6 +8,7 @@ import com.example.unchain.domain.models.personalization.Personality
 import com.example.unchain.domain.usecases.GetAllPersonalitiesUseCase
 import com.example.unchain.domain.usecases.GetUserProgressUseCase
 import com.example.unchain.domain.usecases.SelectPersonalityUseCase
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.firstOrNull
@@ -24,6 +25,7 @@ class ShopViewModel @Inject constructor(
     val personalities : StateFlow<List<Personality>>
         get() = _personalities
 
+
     suspend fun getAllPersonalities(){
         _personalities.value = getAllPersonalitiesUseCase()
     }
@@ -32,8 +34,7 @@ class ShopViewModel @Inject constructor(
         selectPersonalityUseCase(awp)
     }
 
-    suspend fun getUserProgress(addictionId : Int) : UserProgress?{
-        val userProgress = userProgressUseCase.execute(addictionId).firstOrNull()
-        return userProgress
+    fun getUserProgress(addictionId : Int) : Flow<UserProgress?>{
+        return userProgressUseCase.execute(addictionId)
     }
 }

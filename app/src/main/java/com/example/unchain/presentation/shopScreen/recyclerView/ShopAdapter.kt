@@ -1,8 +1,10 @@
 package com.example.unchain.presentation.shopScreen.recyclerView
 
 import android.graphics.Color
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.unchain.databinding.ItemPersonalityBinding
@@ -40,22 +42,19 @@ class ShopAdapter : ListAdapter<Personality, ShopAdapter.ShopItemViewHolder>(Sho
             binding.tvDescription.text = item.description
             binding.tvPrice.text = item.price.toString() + " coins"
 
-            binding.btnAction.setOnClickListener {
+            binding.root.setOnClickListener {
                 itemClick?.invoke(item)
             }
 
             when(item.state){
                 PersonalityState.LOCKED.state -> {
                     binding.personalityBackround.setBackgroundColor(Color.RED)
-                    binding.btnAction.text = "Купить"
                 }
                 PersonalityState.UNLOCKED_SELECTED.state -> {
                     binding.personalityBackround.setBackgroundColor(Color.WHITE)
-                    binding.btnAction.text = "Выбрано"
                 }
                 PersonalityState.UNLOCKED_NOT_SELECTED.state -> {
                     binding.personalityBackround.setBackgroundColor(Color.GRAY)
-                    binding.btnAction.text = "Выбрать"
                 }
             }
         }

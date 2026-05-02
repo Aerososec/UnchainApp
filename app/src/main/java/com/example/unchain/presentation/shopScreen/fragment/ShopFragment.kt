@@ -6,8 +6,10 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.room.Insert
 import com.example.unchain.R
@@ -64,8 +66,13 @@ class ShopFragment : Fragment() {
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
-            val userProgress = getUserProgress()
-            binding.tvCurrency.text = userProgress?.currency.toString()
+            val userProgress = viewModel.getUserProgress(addictionId)
+            repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                userProgress.collect {
+                    binding.tvCurrency.text = it?.currency.toString()
+                }
+            }
+
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
@@ -95,9 +102,6 @@ class ShopFragment : Fragment() {
         }
     }
 
-    private suspend fun getUserProgress() : UserProgress?{
-        return viewModel.getUserProgress(addictionId)
-    }
 
     private fun parseArgs() {
         val args = requireArguments()

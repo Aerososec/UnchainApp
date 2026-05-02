@@ -92,7 +92,6 @@ class UserProgressFragment : Fragment() {
                 progressViewModel.userProgressFlow.collect {
                     it.userProgress?.let { progress ->
                         setValues(progress)
-                        Log.d("TIME_PICKER", "Check picked: ${progress.hour} ${progress.minute}")
                     }
 
                     if (it.shouldShowTimePicker && shouldShowTimePicker){

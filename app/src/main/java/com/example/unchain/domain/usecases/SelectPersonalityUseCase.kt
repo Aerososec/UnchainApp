@@ -6,6 +6,7 @@ import com.example.unchain.domain.models.personalization.Personality
 import com.example.unchain.domain.models.personalization.PersonalityState
 import com.example.unchain.domain.repositories.PersonalizationRepository
 import com.example.unchain.domain.repositories.UserRepository
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.lastOrNull
 import javax.inject.Inject
 
@@ -20,7 +21,7 @@ class SelectPersonalityUseCase @Inject constructor(
     }
 
     private suspend fun getAddiction(addictionId : Int) : UserProgress{
-        return userRepository.getUserProgress(addictionId).lastOrNull() ?: throw Exception()
+        return userRepository.getUserProgress(addictionId).firstOrNull() ?: throw Exception()
     }
 
     private suspend fun getPersonality(personalityId : Int) : Personality{

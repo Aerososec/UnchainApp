@@ -14,6 +14,7 @@ import com.example.unchain.R
 import com.example.unchain.UnchainApp
 import com.example.unchain.databinding.FragmentShopBinding
 import com.example.unchain.di.ViewModelFactory
+import com.example.unchain.domain.models.UserProgress
 import com.example.unchain.domain.models.personalization.AddictionWithPersonality
 import com.example.unchain.domain.models.personalization.Personality
 import com.example.unchain.presentation.shopScreen.recyclerView.ShopAdapter
@@ -63,6 +64,11 @@ class ShopFragment : Fragment() {
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
+            val userProgress = getUserProgress()
+            binding.tvCurrency.text = userProgress?.currency.toString()
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
             viewModel.personalities.collect {
                 shopAdapter.submitList(it)
             }
@@ -87,6 +93,10 @@ class ShopFragment : Fragment() {
             layoutManager = LinearLayoutManager(context)
             adapter = shopAdapter
         }
+    }
+
+    private suspend fun getUserProgress() : UserProgress?{
+        return viewModel.getUserProgress(addictionId)
     }
 
     private fun parseArgs() {

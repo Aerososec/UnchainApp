@@ -62,7 +62,11 @@ class ShopFragment : Fragment() {
         setUpRecyclerView()
 
         viewLifecycleOwner.lifecycleScope.launch {
-            viewModel.getAllPersonalities()
+            repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                viewModel.personalities.collect {
+                    shopAdapter.submitList(it)
+                }
+            }
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
@@ -73,12 +77,6 @@ class ShopFragment : Fragment() {
                 }
             }
 
-        }
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewModel.personalities.collect {
-                shopAdapter.submitList(it)
-            }
         }
 
         shopAdapter.itemClick = { personality ->

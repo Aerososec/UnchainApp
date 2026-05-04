@@ -36,12 +36,13 @@ class SelectPersonalityUseCase @Inject constructor(
                 if (userCurrency < personalityPrice) return
                 updateUserProgress(userProgress, userCurrency - personalityPrice)
                 personalityRepository.insertAddictionWithPersonality(awp)
-                updatePersonality(personality)
+                updatePersonality(personality, PersonalityState.UNLOCKED_NOT_SELECTED.state)
             }
             PersonalityState.UNLOCKED_SELECTED.state -> {
 
             }
             PersonalityState.UNLOCKED_NOT_SELECTED.state -> {
+                updatePersonality(personality, PersonalityState.UNLOCKED_SELECTED.state)
                 personalityRepository.insertAddictionWithPersonality(awp)
                 return
             }
@@ -49,8 +50,8 @@ class SelectPersonalityUseCase @Inject constructor(
 
     }
 
-    private suspend fun updatePersonality(personality: Personality){
-        val updatePersonality = personality.copy(state = PersonalityState.UNLOCKED_NOT_SELECTED.state)
+    private suspend fun updatePersonality(personality: Personality, state: String){
+        val updatePersonality = personality.copy(state = state)
         personalityRepository.updatePersonality(updatePersonality)
     }
 

@@ -7,11 +7,12 @@ import androidx.room.Query
 import com.example.unchain.data.models.dbModels.AddictionWithPersonalityDbModel
 import com.example.unchain.data.models.dbModels.PersonalityDbModel
 import com.example.unchain.data.models.dbModels.ThemeDbModel
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface PersonalizationDao {
     @Query("SELECT * FROM personality")
-    suspend fun getAllPersonalities() : List<PersonalityDbModel>
+    fun getAllPersonalities() : Flow<List<PersonalityDbModel>>
 
     @Query("SELECT * FROM personality WHERE id =:personalityId LIMIT 1")
     suspend fun getPersonalityById(personalityId : Int) : PersonalityDbModel

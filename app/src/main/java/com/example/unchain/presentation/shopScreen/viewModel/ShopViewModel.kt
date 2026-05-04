@@ -10,8 +10,10 @@ import com.example.unchain.domain.usecases.GetUserProgressUseCase
 import com.example.unchain.domain.usecases.SelectPersonalityUseCase
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -21,14 +23,13 @@ class ShopViewModel @Inject constructor(
     private val userProgressUseCase: GetUserProgressUseCase
 ) : ViewModel(){
 
-    private val _personalities = MutableStateFlow<List<Personality>>(emptyList())
-    val personalities : StateFlow<List<Personality>>
-        get() = _personalities
+    val personalities: StateFlow<List<Personality>> = getAllPersonalitiesUseCase()
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(5000),
+                emptyList()
+            )
 
-
-    suspend fun getAllPersonalities(){
-        _personalities.value = getAllPersonalitiesUseCase()
-    }
 
     suspend fun selectPersonality(awp : AddictionWithPersonality){
         selectPersonalityUseCase(awp)
@@ -37,4 +38,5 @@ class ShopViewModel @Inject constructor(
     fun getUserProgress(addictionId : Int) : Flow<UserProgress?>{
         return userProgressUseCase.execute(addictionId)
     }
+
 }

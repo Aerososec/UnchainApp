@@ -1,6 +1,7 @@
 package com.example.unchain.data.repository
 
 import com.example.unchain.data.db.PersonalizationDao
+import com.example.unchain.data.models.dbModels.PersonalityDbModel
 import com.example.unchain.data.models.mapper.AddictionWithPersonalityMapper
 import com.example.unchain.data.models.mapper.PersonalityMapper
 import com.example.unchain.data.models.mapper.ThemeMapper
@@ -8,6 +9,8 @@ import com.example.unchain.domain.models.personalization.AddictionWithPersonalit
 import com.example.unchain.domain.models.personalization.Personality
 import com.example.unchain.domain.models.personalization.Theme
 import com.example.unchain.domain.repositories.PersonalizationRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 class PersonalizationRepositoryImpl @Inject constructor(
@@ -16,8 +19,10 @@ class PersonalizationRepositoryImpl @Inject constructor(
     private val addictionWithPersonalityMapper: AddictionWithPersonalityMapper,
     private val personalizationDao: PersonalizationDao
 ) : PersonalizationRepository{
-    override suspend fun getAllPersonalities(): List<Personality> {
-        return personalityMapper.dbModelToEntityList(personalizationDao.getAllPersonalities())
+    override fun getAllPersonalities(): Flow<List<Personality>>{
+        return personalizationDao.getAllPersonalities().map {
+            personalityMapper.dbModelToEntityList(it)
+        }
     }
 
     override suspend fun getPersonalityIdByAddictionId(addictionId: Int): Int? {

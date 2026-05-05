@@ -2,13 +2,14 @@ package com.example.unchain.domain.usecases
 
 import com.example.unchain.domain.models.personalization.Theme
 import com.example.unchain.domain.repositories.PersonalizationRepository
+import kotlinx.coroutines.flow.firstOrNull
 import javax.inject.Inject
 
 class GetThemeForAddiction @Inject constructor(
     private val personalityRepository: PersonalizationRepository
 ) {
     suspend operator fun invoke(addictionId : Int) : Theme{
-        val personalityId = personalityRepository.getPersonalityIdByAddictionId(addictionId) ?: throw Exception()
+        val personalityId = personalityRepository.getPersonalityIdByAddictionId(addictionId).firstOrNull() ?: -1
         val themeId = personalityRepository.getThemeIdByPersonalityId(personalityId) ?: throw Exception()
         return personalityRepository.getTheme(themeId)
     }

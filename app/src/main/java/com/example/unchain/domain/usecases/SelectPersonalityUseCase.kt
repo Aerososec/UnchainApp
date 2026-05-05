@@ -1,9 +1,9 @@
 package com.example.unchain.domain.usecases
 
 import com.example.unchain.domain.models.UserProgress
+import com.example.unchain.domain.models.personalization.AddictionPersonalityPurchase
 import com.example.unchain.domain.models.personalization.AddictionWithPersonality
 import com.example.unchain.domain.models.personalization.Personality
-import com.example.unchain.domain.models.personalization.PersonalityState
 import com.example.unchain.domain.repositories.PersonalizationRepository
 import com.example.unchain.domain.repositories.UserRepository
 import kotlinx.coroutines.flow.firstOrNull
@@ -31,28 +31,29 @@ class SelectPersonalityUseCase @Inject constructor(
     private suspend fun attemptToBuy(userProgress: UserProgress, personality: Personality, awp: AddictionWithPersonality){
         val userCurrency = userProgress.currency
         val personalityPrice = personality.price
-        when(personality.state){
-            PersonalityState.LOCKED.state -> {
-                if (userCurrency < personalityPrice) return
-                updateUserProgress(userProgress, userCurrency - personalityPrice)
-                personalityRepository.insertAddictionWithPersonality(awp)
-                updatePersonality(personality, PersonalityState.UNLOCKED_NOT_SELECTED.state)
-            }
-            PersonalityState.UNLOCKED_SELECTED.state -> {
-
-            }
-            PersonalityState.UNLOCKED_NOT_SELECTED.state -> {
-                updatePersonality(personality, PersonalityState.UNLOCKED_SELECTED.state)
-                personalityRepository.insertAddictionWithPersonality(awp)
-                return
-            }
+        if (checkPurchases(awp.addictionId, awp.personalityId)){
+            updateAddictionPersonality(awp)
         }
-
+        else{
+            if (userCurrency < personalityPrice) return
+            val currentCurrency = userCurrency - personalityPrice
+            updateUserProgress(userProgress, currentCurrency)
+            updatePurchases(awp.addictionId, awp.personalityId)
+        }
     }
 
-    private suspend fun updatePersonality(personality: Personality, state: String){
-        val updatePersonality = personality.copy(state = state)
-        personalityRepository.updatePersonality(updatePersonality)
+    private suspend fun checkPurchases(addictionId: Int, personalityId : Int) : Boolean{
+        val purchases = personalityRepository.getPurchasedIds(addictionId).firstOrNull() ?: emptyList()
+        return personalityId in purchases
+    }
+
+    private suspend fun updateAddictionPersonality(awp : AddictionWithPersonality){
+        personalityRepository.insertAddictionWithPersonality(awp)
+    }
+
+    private suspend fun updatePurchases(addictionId: Int, personalityId: Int){
+        val newPurchase = AddictionPersonalityPurchase(addictionId, personalityId)
+        personalityRepository.insertPurchase(newPurchase)
     }
 
     private suspend fun updateUserProgress(userProgress : UserProgress, newCurrency : Int){

@@ -11,6 +11,7 @@ import com.example.unchain.databinding.ItemPersonalityBinding
 import com.example.unchain.domain.models.personalization.Personality
 import com.example.unchain.domain.models.personalization.PersonalityState
 
+
 class ShopAdapter : ListAdapter<Personality, ShopAdapter.ShopItemViewHolder>(ShopDiffUtil()){
 
     var itemClick : ((Personality) -> Unit)? = null
@@ -50,11 +51,11 @@ class ShopAdapter : ListAdapter<Personality, ShopAdapter.ShopItemViewHolder>(Sho
                 PersonalityState.LOCKED.state -> {
                     binding.personalityBackround.setBackgroundColor(Color.RED)
                 }
-                PersonalityState.UNLOCKED_SELECTED.state -> {
-                    binding.personalityBackround.setBackgroundColor(Color.WHITE)
-                }
-                PersonalityState.UNLOCKED_NOT_SELECTED.state -> {
+                PersonalityState.UNLOCKED.state -> {
                     binding.personalityBackround.setBackgroundColor(Color.GRAY)
+                }
+                PersonalityState.SELECTED.state -> {
+                    binding.personalityBackround.setBackgroundColor(Color.GREEN)
                 }
             }
         }

@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy.Companion.REPLACE
 import androidx.room.Query
+import com.example.unchain.data.models.dbModels.AddictionPersonalityPurchaseDbModel
 import com.example.unchain.data.models.dbModels.AddictionWithPersonalityDbModel
 import com.example.unchain.data.models.dbModels.PersonalityDbModel
 import com.example.unchain.data.models.dbModels.ThemeDbModel
@@ -18,7 +19,7 @@ interface PersonalizationDao {
     suspend fun getPersonalityById(personalityId : Int) : PersonalityDbModel
 
     @Query("SELECT personalityId FROM addiction_with_personality WHERE addictionId =:addictionId LIMIT 1")
-    suspend fun getPersonalityIdByAddictionId(addictionId : Int) : Int?
+    fun getPersonalityIdByAddictionId(addictionId : Int) : Flow<Int?>
 
     @Query("SELECT themeId FROM personality WHERE id =:personalityId LIMIT 1")
     suspend fun getThemeIdByPersonalityId(personalityId : Int) : Int?
@@ -31,4 +32,10 @@ interface PersonalizationDao {
 
     @Insert(onConflict = REPLACE)
     suspend fun updatePersonality(personalityDbModel: PersonalityDbModel)
+
+    @Query("SELECT personalityId FROM addiction_personality_purchase WHERE addictionId = :id")
+    fun getPurchasedIds(id: Int): Flow<List<Int>>
+
+    @Insert(onConflict = REPLACE)
+    suspend fun insertPurchase(addictionPersonalityPurchase : AddictionPersonalityPurchaseDbModel)
 }

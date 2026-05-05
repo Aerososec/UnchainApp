@@ -2,9 +2,11 @@ package com.example.unchain.data.repository
 
 import com.example.unchain.data.db.PersonalizationDao
 import com.example.unchain.data.models.dbModels.PersonalityDbModel
+import com.example.unchain.data.models.mapper.AddictionPersonalityPurchaseMapper
 import com.example.unchain.data.models.mapper.AddictionWithPersonalityMapper
 import com.example.unchain.data.models.mapper.PersonalityMapper
 import com.example.unchain.data.models.mapper.ThemeMapper
+import com.example.unchain.domain.models.personalization.AddictionPersonalityPurchase
 import com.example.unchain.domain.models.personalization.AddictionWithPersonality
 import com.example.unchain.domain.models.personalization.Personality
 import com.example.unchain.domain.models.personalization.Theme
@@ -17,7 +19,8 @@ class PersonalizationRepositoryImpl @Inject constructor(
     private val personalityMapper: PersonalityMapper,
     private val themeMapper: ThemeMapper,
     private val addictionWithPersonalityMapper: AddictionWithPersonalityMapper,
-    private val personalizationDao: PersonalizationDao
+    private val personalizationDao: PersonalizationDao,
+    private val addictionPersonalityPurchaseMapper: AddictionPersonalityPurchaseMapper
 ) : PersonalizationRepository{
     override fun getAllPersonalities(): Flow<List<Personality>>{
         return personalizationDao.getAllPersonalities().map {
@@ -25,7 +28,7 @@ class PersonalizationRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getPersonalityIdByAddictionId(addictionId: Int): Int? {
+    override fun getPersonalityIdByAddictionId(addictionId: Int): Flow<Int?> {
         return personalizationDao.getPersonalityIdByAddictionId(addictionId)
     }
 
@@ -49,5 +52,13 @@ class PersonalizationRepositoryImpl @Inject constructor(
 
     override suspend fun updatePersonality(personality: Personality) {
         personalizationDao.updatePersonality(personalityMapper.entityToDbModel(personality))
+    }
+
+    override fun getPurchasedIds(id: Int): Flow<List<Int>> {
+        return personalizationDao.getPurchasedIds(id)
+    }
+
+    override suspend fun insertPurchase(addictionPersonalityPurchase: AddictionPersonalityPurchase) {
+        personalizationDao.insertPurchase(addictionPersonalityPurchaseMapper.entityToDbModel(addictionPersonalityPurchase))
     }
 }

@@ -16,4 +16,5 @@ interface PersonalizationRepository {
     suspend fun updatePersonality(personality: Personality)
     fun getPurchasedIds(id: Int): Flow<List<Int>>
     suspend fun insertPurchase(addictionPersonalityPurchase : AddictionPersonalityPurchase)
+    suspend fun getPromptModifierByAddictionId(addictionId: Int): String?
 }

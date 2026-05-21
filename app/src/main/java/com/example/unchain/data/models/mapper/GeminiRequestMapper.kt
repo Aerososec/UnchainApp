@@ -3,9 +3,11 @@ package com.example.unchain.data.models.mapper
 import com.example.unchain.data.remote.ContentRequestDto
 import com.example.unchain.data.remote.GeminiRequestDto
 import com.example.unchain.data.remote.PartRequestDto
+import com.example.unchain.data.remote.SystemInstructionDto
 import com.example.unchain.domain.models.gemini.ContentRequest
 import com.example.unchain.domain.models.gemini.GeminiRequest
 import com.example.unchain.domain.models.gemini.PartRequest
+import com.example.unchain.domain.models.gemini.SystemInstruction
 import javax.inject.Inject
 
 class GeminiRequestMapper @Inject constructor() {
@@ -29,8 +31,19 @@ class GeminiRequestMapper @Inject constructor() {
             contentRequest.parts.map { entityToDtoPart(it) })
     }
 
+    private fun entityToDtoSystemInstructions(si: SystemInstruction) : SystemInstructionDto{
+        return SystemInstructionDto(
+            si.parts.map { entityToDtoPart(it) }
+        )
+    }
+
     fun entityToDtoRequest(geminiRequest: GeminiRequest) : GeminiRequestDto {
-        return GeminiRequestDto(geminiRequest.contents.map { entityToDtoContent(it) })
+        return GeminiRequestDto(
+            geminiRequest.contents.map { entityToDtoContent(it) },
+            geminiRequest.systemInstruction?.let {
+                entityToDtoSystemInstructions(it)
+            }
+        )
     }
 
     fun dtoToEntityRequest(geminiRequestDto: GeminiRequestDto) : GeminiRequest {

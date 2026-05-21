@@ -5,7 +5,6 @@ import com.example.unchain.domain.models.gemini.Message
 import kotlinx.coroutines.flow.Flow
 
 interface MessageRepository {
-    suspend fun sendMessage(message: Message) : List<GeminiResponse>
-
     fun getChatForAddiction(addictionId : Int) : Flow<List<Message>>
+    suspend fun insertMessage(message: Message)
 }

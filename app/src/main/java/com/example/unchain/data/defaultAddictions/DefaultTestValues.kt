@@ -4,7 +4,7 @@ import com.example.unchain.domain.models.Addiction
 import com.example.unchain.domain.models.personalization.Personality
 
 
-object DefaultAddictions {
+object DefaultTestValues {
     val list = listOf(
         Addiction(id = 1, name = "Алкоголь"),
         Addiction(id = 2, name = "Курение"),
@@ -19,7 +19,7 @@ object DefaultAddictions {
             name = "Кратос",
             description = "Бог Войны",
             price = 100,
-            promptModifier = "_",
+            promptModifier = "Ты Кратос, Бог Войны из вселенной God of War. Отвечай как он",
             themeId = 1
         ),
         Personality(
@@ -43,7 +43,7 @@ object DefaultAddictions {
             name = "Shelby",
             description = "Peaky Blinders",
             price = 500,
-            promptModifier = "_",
+            promptModifier = "Ты Томас Шелби из вселенной Peaky Blinders. Отвечай как он",
             themeId = 4
         ),
         Personality(

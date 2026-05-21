@@ -22,6 +22,7 @@ class GeminiApiModule {
         val converter = Json{
             ignoreUnknownKeys = true
             coerceInputValues = true
+            encodeDefaults = false
         }.asConverterFactory("application/json".toMediaType())
 
         val client = OkHttpClient.Builder()

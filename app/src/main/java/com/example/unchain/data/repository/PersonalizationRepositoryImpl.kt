@@ -61,4 +61,8 @@ class PersonalizationRepositoryImpl @Inject constructor(
     override suspend fun insertPurchase(addictionPersonalityPurchase: AddictionPersonalityPurchase) {
         personalizationDao.insertPurchase(addictionPersonalityPurchaseMapper.entityToDbModel(addictionPersonalityPurchase))
     }
+
+    override suspend fun getPromptModifierByAddictionId(addictionId: Int): String? {
+        return personalizationDao.getPromptModifierByAddictionId(addictionId)
+    }
 }

@@ -38,4 +38,13 @@ interface PersonalizationDao {
 
     @Insert(onConflict = REPLACE)
     suspend fun insertPurchase(addictionPersonalityPurchase : AddictionPersonalityPurchaseDbModel)
+
+    @Query("""
+    SELECT p.promptModifier 
+    FROM personality p
+    INNER JOIN addiction_with_personality awp ON awp.personalityId = p.id
+    WHERE awp.addictionId = :addictionId
+    LIMIT 1
+""")
+    suspend fun getPromptModifierByAddictionId(addictionId: Int): String?
 }
